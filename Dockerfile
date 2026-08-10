@@ -39,9 +39,13 @@ COPY --chown=nolag:nolag package.json ./
 USER nolag
 
 ENV NODE_ENV=production
+ENV PORT=3000
 EXPOSE 3000
 
+# Shell form on purpose: the exec form does no variable expansion, so a
+# hardcoded port would report unhealthy forever on any container started with a
+# different PORT.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider "http://localhost:${PORT}/health" || exit 1
 
 CMD ["node", "dist/main"]
