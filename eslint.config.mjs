@@ -32,4 +32,19 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+  {
+    // Test files reach into untyped response bodies. supertest types `res.body`
+    // as `any`, so the unsafe-* rules fire on every assertion about a response.
+    // Typing those would mean maintaining a second copy of every wire shape,
+    // which is worse than the warning: the assertions themselves are the check.
+    files: ["test/**/*.ts", "src/**/*.spec.ts"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/unbound-method": "off",
+    },
+  },
 );

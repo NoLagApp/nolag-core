@@ -5,6 +5,7 @@ import { CoreConfigModule } from "../configModule/config.module";
 import { DatabaseModule } from "../databaseModule/database.module";
 import { GuardsModule } from "../guardsModule/guards.module";
 import { HealthModule } from "../healthModule/health.module";
+import { ProjectConfigModule } from "../projectConfigModule/projectConfig.module";
 import { SigningKeyModule } from "../signingKeyModule/signingKey.module";
 import { SystemApiKeyModule } from "../systemKeyModule/systemApiKey.module";
 
@@ -18,6 +19,7 @@ import { SystemApiKeyModule } from "../systemKeyModule/systemApiKey.module";
     SystemApiKeyModule,
     GuardsModule,
     AuthzModule,
+    ProjectConfigModule,
   ],
 })
 export class AppModule {}
