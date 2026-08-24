@@ -1,0 +1,273 @@
+/*
+ * nolag-core admin surface.
+ *
+ * The product answers one question: may this actor reach this topic. So the
+ * topic address is the subject, and the interface is built around reading
+ * addresses rather than around cards and charts.
+ *
+ * Two consequences run through everything below:
+ *
+ *  1. Monospace is the body face. Every identifier, address and credential is
+ *     machine-readable text that people compare character by character, so it
+ *     gets the dominant face. The proportional face is demoted to chrome.
+ *
+ *  2. Hue is reserved for address segments. app, scope, room and topic each
+ *     keep one colour everywhere they appear, so a four-segment address reads
+ *     as scoped at a glance without anyone having to count slashes. Nothing
+ *     else in the interface competes for those colours.
+ */
+
+:root {
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+
+  --ink: #0e141c;
+  --panel: #151e29;
+  --panel-2: #1b2635;
+  --rule: #253243;
+  --rule-soft: #1e2937;
+  --text: #dce5ef;
+  --muted: #8496ab;
+  --faint: #5a6b80;
+
+  --seg-app: #5ab3f0;
+  --seg-scope: #e9a23b;
+  --seg-room: #6ecf97;
+  --seg-topic: #b9a2f0;
+
+  --accent: #5ab3f0;
+  --accent-ink: #06121c;
+  --danger: #f0685a;
+
+  --focus: #9ad4ff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ink: #eef2f6;
+    --panel: #ffffff;
+    --panel-2: #f5f8fb;
+    --rule: #d3dde7;
+    --rule-soft: #e3eaf1;
+    --text: #16202c;
+    --muted: #5b6b7d;
+    --faint: #8496ab;
+
+    --seg-app: #1d78b8;
+    --seg-scope: #a35f00;
+    --seg-room: #1c7a4c;
+    --seg-topic: #6a4bb5;
+
+    --accent: #1d78b8;
+    --accent-ink: #ffffff;
+    --danger: #b8342a;
+
+    --focus: #1d78b8;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Chrome type ─────────────────────────────────────────────────────────
+ * The proportional face appears only on labels and headings, always small,
+ * always tracked out. It frames the monospace rather than carrying content.
+ */
+
+.eyebrow {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.title {
+  font-family: var(--sans);
+  font-size: 19px;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  margin: 0;
+}
+
+.subtle {
+  color: var(--muted);
+}
+
+.faint {
+  color: var(--faint);
+}
+
+/* ── Controls ───────────────────────────────────────────────────────── */
+
+button {
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--faint);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+}
+
+button.ghost {
+  background: transparent;
+}
+
+input,
+textarea {
+  font: inherit;
+  font-family: var(--mono);
+  color: var(--text);
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* ── Panels ─────────────────────────────────────────────────────────── */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.row {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.empty {
+  padding: 22px 14px;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+}
+
+/* ── Address segments ────────────────────────────────────────────────
+ * The signature. Each segment keeps its colour wherever an address is
+ * shown, so the shape of an address is legible before it is read.
+ */
+
+.seg-app {
+  color: var(--seg-app);
+}
+.seg-scope {
+  color: var(--seg-scope);
+}
+.seg-room {
+  color: var(--seg-room);
+}
+.seg-topic {
+  color: var(--seg-topic);
+}
+
+.slash {
+  color: var(--faint);
+}
+
+/* ── Utility ────────────────────────────────────────────────────────── */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.id {
+  color: var(--faint);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

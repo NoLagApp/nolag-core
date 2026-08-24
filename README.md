@@ -26,8 +26,6 @@ image published from this repository. No fork, no separate proprietary build.
 ```
                 clients (js, react-native, go, python SDKs)
                                   |
-                          message broker
-                                  |
                               kraken                 <- data plane, Apache 2.0
                                   |
                     may this actor touch this topic?
@@ -36,6 +34,10 @@ image published from this repository. No fork, no separate proprietary build.
                                   |
                              PostgreSQL
 ```
+
+There is no external message broker in that picture, and none is required: kraken's default fan-out
+is in-process, so a single node needs nothing but itself. Point it at MQTT instead when you want a
+broker you already operate.
 
 Kraken caches authorization decisions, so core is not in the path of every message. It is consulted
 when a connection is established, periodically to confirm a session is still valid, and when an actor
@@ -65,7 +67,11 @@ Deliberately absent, and staying absent:
 - billing, plans, subscriptions, metering, usage aggregation
 - organizations, users, teams, invitations
 - broker fleet management, version registries, upgrade orchestration
-- the NoLag portal, admin console and app builder
+- NoLag's hosted portal and app builder
+
+Core does ship a small admin UI, covered below, for the configuration this repository owns. It is not
+the NoLag portal: there is no sign-up, no team, no billing screen, and it authenticates with the same
+system key the broker uses rather than with user accounts.
 
 Core enforces limits it is given as plain numbers. It has no concept of what they cost or where they
 came from. Anything that only exists because someone runs this as a commercial service lives outside
@@ -73,9 +79,68 @@ this repository.
 
 ## Running it
 
-A `docker compose` quickstart bringing up Postgres, core, kraken and a broker is in progress. Until
-then there is nothing useful to run. This section will be replaced with real instructions once the
-stack works end to end.
+```sh
+./quickstart/quickstart.sh
+```
+
+That generates `.env`, brings up Postgres, core, kraken and the admin UI, and imports a demo project.
+The first run compiles kraken from source, which takes a few minutes; after that it is seconds.
+
+When it finishes:
+
+| | |
+| --- | --- |
+| Admin UI | http://localhost:3401 |
+| Core API | http://localhost:3400, with OpenAPI at `/swagger` |
+| Broker | ws://localhost:8410/ws |
+
+The demo project's access tokens are written to `quickstart/credentials.json`. They are shown once,
+because core stores only their hashes. The admin UI asks for a system key: it is `NOLAG_SYSTEM_KEY`
+in `.env`.
+
+Connecting is then the same as against hosted NoLag:
+
+```js
+import { NoLag } from "@nolag/js-sdk";
+
+const client = NoLag(accessToken, { url: "ws://localhost:8410/ws" });
+await client.connect();
+client.subscribe("chat/general/messages");
+```
+
+Stop with `docker compose down`, or `docker compose down -v` to discard the data too.
+
+### The admin UI
+
+A small browser surface over the configuration endpoints: list projects, read one, create one from a
+configuration document, and delete one. It holds the system key in the tab and forgets it on close.
+
+**Do not expose it publicly.** The system key it holds can read and destroy every project in the
+deployment, and there are no user accounts behind it. Keep it on localhost or behind whatever
+authenticating proxy you already trust.
+
+Set `CORS_ORIGINS` on core to the UI's origin if you serve it from somewhere other than the compose
+default. `*` is rejected rather than honoured.
+
+### Without the UI
+
+Core is headless by default. Drop the `ui` service and leave `CORS_ORIGINS` empty, and nothing about
+the authorization path changes.
+
+## Verifying a deployment
+
+```sh
+docker compose up -d --wait
+npm run test:stack
+```
+
+19 tests drive the running stack with a real `@nolag/js-sdk` client: authentication, a pub/sub round
+trip, restricted apps, private rooms, and isolation between two tenants.
+
+The suite starts by checking that a token core never issued is refused. Kraken's default auth backend
+is a static token file with an allow-all switch, and a stack wired that way accepts everything, so a
+happy-path test would pass green while proving nothing. If that first check fails, every test in the
+file fails with the reason rather than reporting a mostly-passing run.
 
 ## Licence
 

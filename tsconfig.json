@@ -21,5 +21,9 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  // The admin UI is a separate project with its own tsconfig, its own module
+  // resolution and its own build. Without this, `nest build` tries to compile
+  // browser code as Node and fails on import.meta.env and .vue imports.
+  "exclude": ["node_modules", "dist", "ui"]
 }

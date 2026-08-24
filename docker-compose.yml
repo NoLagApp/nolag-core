@@ -88,7 +88,13 @@ services:
     build:
       # Built from source: there is no published image yet. Point
       # KRAKEN_CONTEXT at a local checkout to build from working changes.
-      context: ${KRAKEN_CONTEXT:-https://github.com/NoLagApp/kraken.git}
+      #
+      # Pinned to a branch, not main, until that branch merges. It carries the
+      # fix that makes kraken honour the path in auth_http_url; without it every
+      # authorization call lands on core's root and 404s, which surfaces as an
+      # authentication failure rather than as a configuration error. Drop the
+      # #ref once it is on main.
+      context: ${KRAKEN_CONTEXT:-https://github.com/NoLagApp/kraken.git#fix/gun-client-base-path}
     restart: unless-stopped
     depends_on:
       core-init:
