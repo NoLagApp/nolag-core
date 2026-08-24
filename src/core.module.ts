@@ -6,9 +6,14 @@ import {
   CoreModuleOptions,
   NoopAuditSink,
 } from "./core.options";
+import { AccessScopeModule } from "./modules/accessScopeModule/accessScope.module";
 import { ActorTokenModule } from "./modules/actorTokenModule/actorToken.module";
 import { AuthzModule } from "./modules/authzModule/authz.module";
+import { LobbyModule } from "./modules/lobbyModule/lobby.module";
+import { PlatformAppModule } from "./modules/platformAppModule/platformApp.module";
+import { ProjectModule } from "./modules/projectModule/project.module";
 import { ProjectConfigModule } from "./modules/projectConfigModule/projectConfig.module";
+import { RoomModule } from "./modules/roomModule/room.module";
 import { SigningKeyModule } from "./modules/signingKeyModule/signingKey.module";
 
 /**
@@ -38,6 +43,11 @@ export class CoreModule {
     return {
       module: CoreModule,
       imports: [
+        ProjectModule,
+        PlatformAppModule,
+        RoomModule,
+        LobbyModule,
+        AccessScopeModule,
         ActorTokenModule,
         SigningKeyModule,
         AuthzModule,
@@ -55,6 +65,11 @@ export class CoreModule {
         CORE_OPTIONS,
         CORE_AUDIT_SINK,
         CoreConfig,
+        ProjectModule,
+        PlatformAppModule,
+        RoomModule,
+        LobbyModule,
+        AccessScopeModule,
         ActorTokenModule,
         SigningKeyModule,
         AuthzModule,

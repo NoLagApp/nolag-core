@@ -46,8 +46,14 @@ export {
 
 /* ── Facades ────────────────────────────────────────────────────────────── */
 
+export { ProjectFacade } from "./modules/projectModule/project.facade";
+export { PlatformAppFacade } from "./modules/platformAppModule/platformApp.facade";
+export { AccessScopeFacade } from "./modules/accessScopeModule/accessScope.facade";
+export { LobbyFacade } from "./modules/lobbyModule/lobby.facade";
 export { AuthzFacade } from "./modules/authzModule/authz.facade";
 export { ActorTokenFacade } from "./modules/actorTokenModule/actorToken.facade";
+export { RoomFacade } from "./modules/roomModule/room.facade";
+export { RoomActorAccessFacade } from "./modules/roomModule/roomActorAccess.facade";
 export { SigningKeyFacade } from "./modules/signingKeyModule/signingKey.facade";
 export { ProjectConfigFacade } from "./modules/projectConfigModule/projectConfig.facade";
 
@@ -66,9 +72,26 @@ export {
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
+export * from "./modules/accessScopeModule/dto/accessScope.dto";
+export { AccessScopeQuery } from "./modules/accessScopeModule/query/accessScope.query";
 export * from "./modules/authzModule/dto/authz.dto";
 export * from "./modules/projectConfigModule/dto/projectConfig.dto";
-export type { PaginatedResult } from "./common/pagination";
+export * from "./modules/roomModule/dto/room.dto";
+export * from "./modules/roomModule/dto/roomActorAccess.dto";
+export { RoomQuery } from "./modules/roomModule/query/room.query";
+export * from "./modules/lobbyModule/dto/lobby.dto";
+export { LobbyQuery } from "./modules/lobbyModule/query/lobby.query";
+export * from "./modules/platformAppModule/dto/platformApp.dto";
+export { PlatformAppQuery } from "./modules/platformAppModule/query/platformApp.query";
+export * from "./modules/projectModule/dto/project.dto";
+export { ProjectQuery } from "./modules/projectModule/query/project.query";
+export {
+  BaseQuery,
+  BasePaginationService,
+  type IBaseQuery,
+  type PaginatedResult,
+  type QueryOptions,
+} from "./common/pagination";
 
 export { EAccessPermission } from "./modules/actorTokenModule/enum/EAccessPermission.enum";
 export { EActorTokenStatus } from "./modules/actorTokenModule/enum/EActorTokenStatus.enum";
@@ -79,6 +102,7 @@ export {
 export { EAppAccessMode } from "./modules/platformAppModule/enum/EAppAccessMode.enum";
 export { EAppStatus } from "./modules/platformAppModule/enum/EAppStatus.enum";
 export { ERoomStatus } from "./modules/roomModule/enum/ERoomStatus.enum";
+export { IsValidTopicName } from "./common/validators/isValidTopicName.validator";
 export { ESigningKeyStatus } from "./modules/signingKeyModule/enum/ESigningKeyStatus.enum";
 
 /* ── Entities ───────────────────────────────────────────────────────────
