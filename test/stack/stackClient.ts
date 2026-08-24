@@ -9,7 +9,6 @@ const { NoLag } = require("@nolag/js-sdk");
 
 export const CORE_URL = process.env.STACK_CORE_URL as string;
 export const KRAKEN_URL = process.env.STACK_KRAKEN_URL as string;
-const SYSTEM_KEY = process.env.NOLAG_SYSTEM_KEY as string;
 
 export interface ImportedProject {
   projectId: string;
@@ -24,12 +23,13 @@ async function coreRequest(
   path: string,
   body?: unknown,
 ): Promise<{ status: number; body: any }> {
+  // No Authorization header. The example host authenticates nobody, which is
+  // exactly why the suite's gate below matters: with no operator auth, the
+  // only thing standing between a green run and a meaningless one is that a
+  // token core never issued is still refused at the broker.
   const response = await fetch(`${CORE_URL}${path}`, {
     method,
-    headers: {
-      Authorization: `Bearer ${SYSTEM_KEY}`,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
+    headers: body ? { "Content-Type": "application/json" } : {},
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 

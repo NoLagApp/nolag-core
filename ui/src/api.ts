@@ -1,10 +1,13 @@
 /**
- * Talking to core.
+ * Talking to the example host.
  *
- * The system key is the most privileged credential in the deployment, so it
- * lives in sessionStorage rather than localStorage: closing the tab forgets it.
- * It is never written into the bundle, never sent anywhere but the core URL
- * this build was pointed at, and never logged.
+ * There is no credential here, and that is not an omission. `@nolag/core` is a
+ * library with no opinion about who is calling it, and the example host that
+ * mounts it authenticates nobody. Both it and this page are bound to
+ * 127.0.0.1 for exactly that reason.
+ *
+ * A real deployment mounts the same facades behind real authentication, and a
+ * UI for that deployment would send whatever that expects.
  */
 
 const CORE_URL: string = (
@@ -15,26 +18,6 @@ export const KRAKEN_URL: string =
   import.meta.env.VITE_KRAKEN_URL ?? "ws://localhost:8410/ws";
 
 export const coreUrl = CORE_URL;
-
-const KEY_STORAGE = "nolag-core.system-key";
-
-export function storedKey(): string {
-  return sessionStorage.getItem(KEY_STORAGE) ?? "";
-}
-
-export function rememberKey(key: string): void {
-  sessionStorage.setItem(KEY_STORAGE, key);
-}
-
-export function forgetKey(): void {
-  sessionStorage.removeItem(KEY_STORAGE);
-}
-
-/** `nlg_system_ab12cd34ef56.…` shortened for display. Never the secret. */
-export function keyLabel(key: string): string {
-  const dot = key.indexOf(".");
-  return dot === -1 ? key : key.slice(0, dot);
-}
 
 export class CoreError extends Error {
   constructor(
@@ -50,16 +33,11 @@ async function request<T>(
   path: string,
   body?: unknown,
 ): Promise<T> {
-  const key = storedKey();
-
   let response: Response;
   try {
     response = await fetch(`${CORE_URL}${path}`, {
       method,
-      headers: {
-        ...(key ? { Authorization: `Bearer ${key}` } : {}),
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      },
+      headers: body === undefined ? {} : { "Content-Type": "application/json" },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   } catch {
@@ -70,10 +48,6 @@ async function request<T>(
         `and that CORS_ORIGINS names this page's origin.`,
       0,
     );
-  }
-
-  if (response.status === 401) {
-    throw new CoreError("That key was refused.", 401);
   }
 
   const text = await response.text();

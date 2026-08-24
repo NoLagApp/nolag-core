@@ -1,25 +1,22 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import {
+  coreUrl,
   deleteProject,
   exportProject,
-  forgetKey,
-  keyLabel,
   listProjects,
-  storedKey,
   type ImportedCredentials,
   type ProjectDoc,
   type ProjectSummary,
 } from "./api";
 import CredentialReveal from "./components/CredentialReveal.vue";
 import ImportPanel from "./components/ImportPanel.vue";
-import KeyGate from "./components/KeyGate.vue";
 import NolagMark from "./components/NolagMark.vue";
 import ProjectDetail from "./components/ProjectDetail.vue";
+import TopicAddress from "./components/TopicAddress.vue";
 
 type View = "project" | "import";
 
-const unlocked = ref(false);
 const projects = ref<ProjectSummary[]>([]);
 const selectedId = ref<string | null>(null);
 const doc = ref<ProjectDoc | null>(null);
@@ -27,21 +24,13 @@ const view = ref<View>("project");
 const credentials = ref<ImportedCredentials | null>(null);
 const problem = ref("");
 const busy = ref(false);
+const loaded = ref(false);
 
 const selected = computed(
   () => projects.value.find((p) => p.projectId === selectedId.value) ?? null,
 );
 
-onMounted(() => {
-  if (storedKey()) {
-    void unlock();
-  }
-});
-
-async function unlock() {
-  unlocked.value = true;
-  await refresh();
-}
+onMounted(() => void refresh());
 
 async function refresh() {
   problem.value = "";
@@ -52,6 +41,8 @@ async function refresh() {
     }
   } catch (error) {
     problem.value = error instanceof Error ? error.message : "Cannot list.";
+  } finally {
+    loaded.value = true;
   }
 }
 
@@ -98,31 +89,17 @@ async function onImported(minted: ImportedCredentials) {
   await refresh();
   await select(minted.projectId);
 }
-
-function lock() {
-  forgetKey();
-  unlocked.value = false;
-  projects.value = [];
-  selectedId.value = null;
-  doc.value = null;
-  credentials.value = null;
-}
 </script>
 
 <template>
-  <KeyGate v-if="!unlocked" @unlocked="unlock" />
-
-  <div v-else class="shell">
+  <div class="shell">
     <header class="bar">
       <span class="brand">
         <NolagMark :size="17" />
         <span class="wordmark">nolag<span class="faint">-core</span></span>
       </span>
       <span class="eyebrow center">self-hosted</span>
-      <span class="inline">
-        <span class="keyid faint">{{ keyLabel(storedKey()) }}</span>
-        <button class="ghost" @click="lock">Lock</button>
-      </span>
+      <span class="target faint">{{ coreUrl }}</span>
     </header>
 
     <div class="body">
@@ -132,7 +109,7 @@ function lock() {
           <span class="eyebrow">{{ projects.length }}</span>
         </div>
 
-        <p v-if="!projects.length" class="empty">
+        <p v-if="loaded && !projects.length" class="empty">
           Nothing here yet. Import a project to get started.
         </p>
 
@@ -140,7 +117,9 @@ function lock() {
           v-for="project in projects"
           :key="project.projectId"
           class="entry"
-          :class="{ active: project.projectId === selectedId && view === 'project' }"
+          :class="{
+            active: project.projectId === selectedId && view === 'project',
+          }"
           @click="select(project.projectId)"
         >
           <span class="entry-name">{{ project.name }}</span>
@@ -180,11 +159,25 @@ function lock() {
           @delete="removeSelected"
         />
 
-        <div v-else-if="!projects.length" class="blank">
-          <h1 class="title">No projects yet</h1>
-          <p class="subtle">
-            A project holds the apps, rooms and actors this deployment will
-            authorize. Import one to start.
+        <!--
+          The empty state carries the thesis, because it is the first thing a
+          first-time reader sees and the address is what everything else here
+          is about.
+        -->
+        <div v-else-if="loaded && !projects.length" class="blank">
+          <h1 class="claim">May this actor reach this topic?</h1>
+          <div class="sample">
+            <TopicAddress
+              app="chat"
+              scope="acme"
+              room="general"
+              topic="messages"
+            />
+          </div>
+          <p class="lede subtle">
+            That is the whole job. Core holds the apps, rooms, tenants and
+            actors, and answers the broker every time someone connects or
+            subscribes.
           </p>
           <button class="primary" @click="view = 'import'">New project</button>
         </div>
@@ -231,12 +224,10 @@ function lock() {
   text-align: center;
 }
 
-.bar .inline {
-  justify-content: flex-end;
-}
-
-.keyid {
+.target {
   font-size: 11px;
+  text-align: right;
+  word-break: break-all;
 }
 
 .body {
@@ -324,14 +315,33 @@ function lock() {
 }
 
 .blank {
-  padding: 60px 24px;
-  max-width: 46ch;
+  padding: 56px 24px;
+  max-width: 560px;
 }
 
-.blank p {
+.claim {
+  font-family: var(--sans);
+  font-size: clamp(24px, 4.4vw, 31px);
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin: 0 0 20px;
+  max-width: 18ch;
+}
+
+.sample {
+  font-size: clamp(15px, 2.6vw, 18px);
+  padding: 12px 0 14px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+}
+
+.lede {
   font-family: var(--sans);
   font-size: 13px;
-  margin: 10px 0 20px;
+  margin: 16px 0 22px;
+  max-width: 54ch;
 }
 
 @media (max-width: 720px) {
@@ -343,6 +353,14 @@ function lock() {
     border-right: 0;
     border-bottom: 1px solid var(--rule);
     max-height: 190px;
+  }
+
+  .bar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .target {
+    display: none;
   }
 }
 </style>

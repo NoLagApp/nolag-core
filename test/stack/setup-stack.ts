@@ -15,10 +15,3 @@ const krakenPort = process.env.KRAKEN_PORT ?? "8410";
 
 process.env.STACK_CORE_URL ??= `http://localhost:${corePort}`;
 process.env.STACK_KRAKEN_URL ??= `ws://localhost:${krakenPort}/ws`;
-
-if (!process.env.NOLAG_SYSTEM_KEY) {
-  throw new Error(
-    "NOLAG_SYSTEM_KEY is not set. Run ./quickstart/quickstart.sh to bring up " +
-      "the stack, or export it if the stack is running elsewhere.",
-  );
-}
