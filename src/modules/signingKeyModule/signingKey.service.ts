@@ -3,7 +3,7 @@ import * as jwt from "jsonwebtoken";
 import { encryptSecret, decryptSecret } from "../../common/utils/secretCipher";
 import { generateCredential } from "../../common/utils/secretHash";
 import { TtlCache } from "../../common/utils/ttlCache";
-import { CoreConfigService } from "../configModule/config.service";
+import { CoreConfig } from "../../core.config";
 import { ESigningKeyPrefix } from "./enum/ESigningKeyPrefix.enum";
 import { ESigningKeyStatus } from "./enum/ESigningKeyStatus.enum";
 import { SigningKeyEntity } from "./signingKey.entity";
@@ -64,7 +64,7 @@ export class SigningKeyService {
 
   constructor(
     private readonly _signingKeyRepository: SigningKeyRepository,
-    private readonly _config: CoreConfigService,
+    private readonly _config: CoreConfig,
   ) {}
 
   private encryptionKey(): string {

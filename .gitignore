@@ -43,3 +43,7 @@ Thumbs.db
 
 # Quickstart output
 quickstart/credentials.json
+
+# Example host
+example/node_modules/
+example/dist/

@@ -2,11 +2,7 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
     "esModuleInterop": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
@@ -16,15 +12,16 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
+    // ts-jest warns without this under Node16 module resolution.
+    "isolatedModules": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  // Each of these is a separate project with its own tsconfig and its own
-  // build: `ui` is browser code (import.meta.env, .vue imports), `example` is a
-  // consumer that resolves @nolag/core through node_modules rather than through
-  // source, and `tools` is dev tooling that never ships.
-  "exclude": ["node_modules", "dist", "ui", "example", "tools"]
+  // test is included so typed linting can see it. tsconfig.build.json
+  // excludes it again, so it never reaches dist.
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

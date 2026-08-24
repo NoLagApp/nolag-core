@@ -5,12 +5,6 @@ export class InitialSchema1786323955167 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "system_api_key" ("created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "system_api_key_id" uuid NOT NULL, "key_id" character varying(100) NOT NULL, "secret_hash" text NOT NULL, "name" character varying(255) NOT NULL, "status" character varying(50) NOT NULL DEFAULT 'active', "expires_at" TIMESTAMP WITH TIME ZONE, "last_used_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "PK_881398ea16269dc9457c02bccf8" PRIMARY KEY ("system_api_key_id"))`,
-    );
-    await queryRunner.query(
-      `CREATE UNIQUE INDEX "IDX_f682ee665cb42a77ed403ae506" ON "system_api_key" ("key_id") `,
-    );
-    await queryRunner.query(
       `CREATE TABLE "project" ("created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "project_id" uuid NOT NULL, "organization_id" uuid, "name" character varying(255) NOT NULL, "description" text, "max_connections" integer, "max_message_size_bytes" integer, "session_expiry_seconds" integer, "limits_synced_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "PK_1a480c5734c5aacb9cef7b1499d" PRIMARY KEY ("project_id"))`,
     );
     await queryRunner.query(
@@ -274,6 +268,5 @@ export class InitialSchema1786323955167 implements MigrationInterface {
     await queryRunner.query(
       `DROP INDEX "public"."IDX_f682ee665cb42a77ed403ae506"`,
     );
-    await queryRunner.query(`DROP TABLE "system_api_key"`);
   }
 }

@@ -13,7 +13,7 @@ import {
   EActorType,
   PERSISTENT_SESSION_ACTOR_TYPES,
 } from "../actorTokenModule/enum/EActorType.enum";
-import { CoreConfigService } from "../configModule/config.service";
+import { CoreConfig } from "../../core.config";
 import { LobbyEntity } from "../lobbyModule/lobby.entity";
 import { LobbyRoomEntity } from "../lobbyModule/lobbyRoom.entity";
 import {
@@ -79,7 +79,7 @@ export class AuthzService {
     @InjectDataSource() private readonly _dataSource: DataSource,
     private readonly _actorTokenFacade: ActorTokenFacade,
     private readonly _signingKeyFacade: SigningKeyFacade,
-    private readonly _config: CoreConfigService,
+    private readonly _config: CoreConfig,
   ) {}
 
   /* ── validate ──────────────────────────────────────────────────────────── */

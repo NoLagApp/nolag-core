@@ -5,16 +5,13 @@ import { ActorAppAccessEntity } from "../actorTokenModule/actorAppAccess.entity"
 import { ActorTokenEntity } from "../actorTokenModule/actorToken.entity";
 import { ActorTokenModule } from "../actorTokenModule/actorToken.module";
 import { ActorTokenStateEntity } from "../actorTokenModule/actorTokenState.entity";
-import { CoreConfigModule } from "../configModule/config.module";
 import { LobbyEntity } from "../lobbyModule/lobby.entity";
 import { LobbyRoomEntity } from "../lobbyModule/lobbyRoom.entity";
 import { PlatformAppEntity } from "../platformAppModule/platformApp.entity";
 import { ProjectEntity } from "../projectModule/project.entity";
 import { RoomEntity } from "../roomModule/room.entity";
 import { RoomActorAccessEntity } from "../roomModule/roomActorAccess.entity";
-import { GuardsModule } from "../guardsModule/guards.module";
 import { SigningKeyModule } from "../signingKeyModule/signingKey.module";
-import { AuthzController } from "./authz.controller";
 import { AuthzFacade } from "./authz.facade";
 import { AuthzService } from "./authz.service";
 
@@ -40,10 +37,7 @@ import { AuthzService } from "./authz.service";
     ]),
     ActorTokenModule,
     SigningKeyModule,
-    CoreConfigModule,
-    GuardsModule,
   ],
-  controllers: [AuthzController],
   providers: [AuthzService, AuthzFacade],
   exports: [AuthzFacade],
 })

@@ -9,7 +9,7 @@ import { EAccessPermission } from "../src/modules/actorTokenModule/enum/EAccessP
 import { EActorTokenStatus } from "../src/modules/actorTokenModule/enum/EActorTokenStatus.enum";
 import { EActorType } from "../src/modules/actorTokenModule/enum/EActorType.enum";
 import { AuthzService } from "../src/modules/authzModule/authz.service";
-import { CoreConfigService } from "../src/modules/configModule/config.service";
+import { CoreConfig } from "../src/core.config";
 import { LobbyEntity } from "../src/modules/lobbyModule/lobby.entity";
 import { LobbyRoomEntity } from "../src/modules/lobbyModule/lobbyRoom.entity";
 import { EAppAccessMode } from "../src/modules/platformAppModule/enum/EAppAccessMode.enum";
@@ -52,20 +52,20 @@ export function buildConfig(
     defaultSessionExpirySeconds: number;
     signingKeyEncryptionKey: string | undefined;
   }> = {},
-): CoreConfigService {
+): CoreConfig {
   return {
     defaultMaxConnections: null,
     defaultMaxMessageSizeBytes: null,
     defaultSessionExpirySeconds: 3600,
     signingKeyEncryptionKey: TEST_ENCRYPTION_KEY,
     ...overrides,
-  } as CoreConfigService;
+  } as CoreConfig;
 }
 
 /** A fully wired AuthzService with real repositories, no mocks in the path. */
 export function buildAuthzService(
   ds: DataSource,
-  config: CoreConfigService = buildConfig(),
+  config: CoreConfig = buildConfig(),
 ): AuthzService {
   const actorTokenFacade = new ActorTokenFacade(
     new ActorTokenService(new ActorTokenRepository(ds)),

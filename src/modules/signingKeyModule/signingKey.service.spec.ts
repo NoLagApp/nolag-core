@@ -1,7 +1,7 @@
 import { generateKeyPairSync, randomBytes } from "crypto";
 import * as jwt from "jsonwebtoken";
 import { encryptSecret } from "../../common/utils/secretCipher";
-import { CoreConfigService } from "../configModule/config.service";
+import { CoreConfig } from "../../core.config";
 import { ESigningKeyStatus } from "./enum/ESigningKeyStatus.enum";
 import { SigningKeyEntity } from "./signingKey.entity";
 import { SigningKeyRepository } from "./signingKey.repository";
@@ -63,7 +63,7 @@ describe("SigningKeyService", () => {
       get signingKeyEncryptionKey() {
         return encryptionKey;
       },
-    } as CoreConfigService;
+    } as CoreConfig;
 
     service = new SigningKeyService(
       repository as unknown as SigningKeyRepository,
