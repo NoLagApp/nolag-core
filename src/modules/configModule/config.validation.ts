@@ -82,6 +82,21 @@ export class CoreConfigValidation {
   @IsString()
   SKIP_MIGRATIONS?: string;
 
+  /* ───────────── Browser access ───────────── */
+
+  /**
+   * Comma separated list of origins allowed to call core from a browser.
+   *
+   * Unset means CORS stays off, which is correct for the headless case: the
+   * broker and any server-side caller are not subject to it, so a deployment
+   * that runs no UI should not be relaxing browser policy at all. `*` is
+   * rejected, because every endpoint here is behind a system key and a wildcard
+   * would let any page on the internet drive the key a user pasted into a tab.
+   */
+  @IsOptional()
+  @IsString()
+  CORS_ORIGINS?: string;
+
   /* ───────────── Client tokens ───────────── */
 
   /**

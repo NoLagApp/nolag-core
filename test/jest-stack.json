@@ -1,0 +1,13 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": "test/stack/.*\\.stack-spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": ["/node_modules/(?!(uuid)/)"],
+  "setupFiles": ["<rootDir>/test/stack/setup-stack.ts"],
+  "testTimeout": 60000,
+  "maxWorkers": 1
+}

@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "project": {
+    "name": "Demo",
+    "description": "Seeded by the NoLag quickstart. Safe to delete."
+  },
+  "accessScopes": [
+    {
+      "slug": "acme",
+      "name": "Acme",
+      "description": "A tenant. Actors bound to a scope only ever see topics under it, which is how one deployment serves many customers without them being able to reach each other."
+    },
+    {
+      "slug": "globex",
+      "name": "Globex",
+      "description": "A second tenant, so that isolation is something you can watch rather than something you take on trust."
+    }
+  ],
+  "apps": [
+    {
+      "slug": "chat",
+      "name": "Chat",
+      "description": "Open access: every active actor in the project reaches this app without a stored grant.",
+      "accessMode": "open",
+      "topics": ["messages", "typing"],
+      "rooms": [
+        { "slug": "general", "name": "General" },
+        { "slug": "random", "name": "Random" },
+        {
+          "slug": "vip",
+          "name": "VIP",
+          "description": "Carrying any type grant makes a room private to the types named, even inside an open app.",
+          "typeGrants": [{ "actorType": "service", "permission": "pubSub" }]
+        }
+      ]
+    },
+    {
+      "slug": "ops",
+      "name": "Ops",
+      "description": "Restricted access: reaching this app requires an explicit grant on the actor.",
+      "accessMode": "restricted",
+      "topics": ["alerts"],
+      "rooms": [{ "slug": "control", "name": "Control" }]
+    }
+  ],
+  "actors": [
+    {
+      "ref": "alice",
+      "name": "Alice",
+      "actorType": "user"
+    },
+    {
+      "ref": "bob",
+      "name": "Bob",
+      "actorType": "user"
+    },
+    {
+      "ref": "opsbot",
+      "name": "Ops Bot",
+      "actorType": "service",
+      "appAccess": [{ "appSlug": "ops", "permission": "pubSub" }]
+    },
+    {
+      "ref": "acme-device",
+      "name": "Acme Device",
+      "actorType": "device",
+      "scopeSlug": "acme"
+    },
+    {
+      "ref": "globex-device",
+      "name": "Globex Device",
+      "actorType": "device",
+      "scopeSlug": "globex"
+    }
+  ],
+  "signingKeys": [
+    {
+      "ref": "browser",
+      "name": "Browser client tokens"
+    }
+  ]
+}

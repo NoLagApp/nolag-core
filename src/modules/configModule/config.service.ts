@@ -67,6 +67,18 @@ export class CoreConfigService {
     return this.cfg.get("SKIP_MIGRATIONS", { infer: true }) === "true";
   }
 
+  /* ───────────── Browser access ───────────── */
+
+  /** Empty means CORS stays off. `*` is discarded rather than honoured. */
+  get corsOrigins(): string[] {
+    const raw = this.cfg.get("CORS_ORIGINS", { infer: true }) ?? "";
+
+    return raw
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0 && origin !== "*");
+  }
+
   /* ───────────── Client tokens ───────────── */
 
   get signingKeyEncryptionKey(): string | undefined {

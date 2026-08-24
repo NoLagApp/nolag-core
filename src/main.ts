@@ -46,6 +46,22 @@ async function bootstrap() {
 
   const config = app.get(CoreConfigService);
 
+  // Off unless origins are named. The admin UI is a browser client on a
+  // different origin, so it needs this; a headless deployment does not, and
+  // leaving it off there means one less thing that can be misconfigured into
+  // an opening. Credentials stay off deliberately: callers authenticate with a
+  // bearer system key, so there is no cookie for a browser to attach and no
+  // reason to permit one.
+  const corsOrigins = config.corsOrigins;
+  if (corsOrigins.length > 0) {
+    app.enableCors({
+      origin: corsOrigins,
+      methods: ["GET", "POST", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: false,
+    });
+  }
+
   app.useGlobalPipes(
     new ValidationPipe({
       // Strip properties absent from the DTO, so a request cannot set fields
