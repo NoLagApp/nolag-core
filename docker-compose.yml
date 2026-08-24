@@ -1,4 +1,9 @@
-# NoLag self-hosted stack.
+# NoLag, running on your machine in a few minutes.
+#
+# This is a demonstration stack, NOT a production deployment. No TLS, secrets
+# in a plaintext .env, Postgres in a container with no backups, one node, no
+# message history. README.md lists the omissions in full. Take the images and
+# the shape of the wiring; leave the rest.
 #
 #   postgres  configuration and authorization state
 #   core      this service: answers whether an actor may reach a topic

@@ -77,7 +77,11 @@ Core enforces limits it is given as plain numbers. It has no concept of what the
 came from. Anything that only exists because someone runs this as a commercial service lives outside
 this repository.
 
-## Running it
+## Trying it
+
+The compose stack exists so you can see the whole system working in a few minutes on your own
+machine. **It is not a production deployment**, and it is not trying to be one. See
+[what it is not](#what-the-quickstart-is-not) before you point anything real at it.
 
 ```sh
 ./quickstart/quickstart.sh
@@ -126,6 +130,26 @@ default. `*` is rejected rather than honoured.
 
 Core is headless by default. Drop the `ui` service and leave `CORS_ORIGINS` empty, and nothing about
 the authorization path changes.
+
+### What the quickstart is not
+
+It is a demonstration, not a deployment. Everything below is a deliberate omission, not an oversight,
+and the list is here so nobody has to discover them the hard way:
+
+- **No TLS anywhere.** Core's API, the broker's WebSocket and the UI are all plaintext HTTP. The
+  system key travels as a bearer token in the clear. Fine over loopback, wrong over a network.
+- **Secrets sit in a plaintext `.env`** that the script generates and chmods to 600. That is not
+  secret management.
+- **Postgres runs in a container** with a local volume and no backups, no replication and no tuning.
+- **One node.** No clustering, no failover, no horizontal scale. Kraken's in-process fan-out means a
+  restart drops every connection.
+- **Message history is off**, and the store is in-memory. Anything kraken did record would die with
+  the container.
+- **The admin UI has no user accounts**, only the system key, and that key can destroy every project.
+
+The parts worth keeping in a real deployment are the images themselves and the shape of the wiring:
+core reachable only from the broker, one shared secret between them, migrations applied on boot. The
+rest of it belongs to whatever you already use to run things.
 
 ## Verifying a deployment
 
