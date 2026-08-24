@@ -4,9 +4,15 @@ The authorization and configuration core of [NoLag](https://nolag.app), under Ap
 
 `nolag-core` answers one question: **may this actor touch this topic?**
 
-It owns projects, apps, rooms, lobbies, access scopes, actors, tokens and signing keys, and it serves
-the authorization decisions that a broker needs in order to accept a connection and route a message.
-Nothing else.
+It is a **library**, not a service. It owns projects, apps, rooms, lobbies, access scopes, actors,
+tokens and signing keys, and it exposes facades that answer what a broker needs in order to accept a
+connection and route a message. Nothing else.
+
+There is no transport here, and no opinion about who is calling. Mounting it behind authentication is
+the host's job: NoLag mounts these facades behind its own, and the example host in this repository
+mounts them behind none. What core does keep is the authentication of **actors**, which is the
+product: whether an access token is real, whether a client token was signed by the right key, and
+what either may reach.
 
 > **Status: early development.** Nothing is released yet, the schema and HTTP contract will change,
 > and there is no stability guarantee. Do not run this in production.
@@ -24,15 +30,20 @@ image published from this repository. No fork, no separate proprietary build.
 ## Where it sits
 
 ```
-                clients (js, react-native, go, python SDKs)
-                                  |
-                              kraken                 <- data plane, Apache 2.0
-                                  |
-                    may this actor touch this topic?
-                                  |
-                            nolag-core               <- this repo, Apache 2.0
-                                  |
-                             PostgreSQL
+        clients (js, react-native, go, python SDKs)
+                          |
+                      kraken                    <- data plane, Apache 2.0
+                          |
+          may this actor touch this topic?
+                          |
+    ┌─────────────────────────────────────────┐
+    │  your host: routing + your auth         │  <- you write this, or use example/
+    │  ┌───────────────────────────────────┐  │
+    │  │  @nolag/core                      │  │  <- this repo, Apache 2.0
+    │  └───────────────────────────────────┘  │
+    └─────────────────────────────────────────┘
+                          |
+                     PostgreSQL
 ```
 
 There is no external message broker in that picture, and none is required: kraken's default fan-out
@@ -43,19 +54,44 @@ Kraken caches authorization decisions, so core is not in the path of every messa
 when a connection is established, periodically to confirm a session is still valid, and when an actor
 subscribes to something it has not been granted yet.
 
+## Mounting it
+
+```ts
+import { CoreModule, coreEntities, allCoreMigrations, AuthzFacade } from "@nolag/core";
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      // Explicit arrays, not a glob. A glob relative to your own source will
+      // never reach node_modules, and core's tables would silently not exist.
+      entities: [...coreEntities, ...myEntities],
+      migrations: [...allCoreMigrations, ...myMigrations],
+    }),
+    CoreModule.forRoot({ signingKeyEncryptionKey: process.env.SIGNING_KEY }),
+  ],
+})
+export class MyHostModule {}
+```
+
+Then inject `AuthzFacade` behind whatever authentication you already have.
+
 ## The contract
 
-Four endpoints, called by kraken:
+Four questions the broker asks, and the facade methods that answer them:
 
-| Endpoint | Question it answers |
+| Broker calls | Facade |
 | --- | --- |
-| `POST /v1/internal/actors/validate` | May this token connect, and what may it reach? |
-| `POST /v1/internal/actors/revalidate` | Is this session still valid? |
-| `POST /v1/internal/actors/check-room-access` | May this actor use this topic pattern? |
-| `POST /v1/internal/subscriptions/update` | Record what this session is subscribed to. |
+| on connect | `validateActor(accessToken)` |
+| periodically, for a live session | `revalidateActor(actorTokenId)` |
+| on a subscribe it has not cached | `checkRoomAccess(actorTokenId, pattern)` |
+| on subscribe and unsubscribe | `updateSubscription(...)` |
 
-Plus configuration CRUD and whole-project export and import, so state can be moved in and out without
-a database dump.
+Responses must go through the exported `toBroker*` adapters rather than serialising a DTO. That file
+is the wire contract, and routing everything through it is what stops a field rename from silently
+changing what every deployed broker receives.
+
+Plus configuration facades for project, app, room, lobby, access scope, actor token and signing key,
+and whole-project export and import, so state can be moved in and out without a database dump.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the resolution model, the topic addressing scheme
 and the schema.
@@ -68,10 +104,10 @@ Deliberately absent, and staying absent:
 - organizations, users, teams, invitations
 - broker fleet management, version registries, upgrade orchestration
 - NoLag's hosted portal and app builder
+- **any authentication of its callers**, which is the host's job
 
-Core does ship a small admin UI, covered below, for the configuration this repository owns. It is not
-the NoLag portal: there is no sign-up, no team, no billing screen, and it authenticates with the same
-system key the broker uses rather than with user accounts.
+The repository ships an example host and a small admin UI over it, both covered below. Neither is the
+NoLag portal, and neither is meant for production.
 
 Core enforces limits it is given as plain numbers. It has no concept of what they cost or where they
 came from. Anything that only exists because someone runs this as a commercial service lives outside
@@ -99,8 +135,10 @@ When it finishes:
 | Broker | ws://localhost:8410/ws |
 
 The demo project's access tokens are written to `quickstart/credentials.json`. They are shown once,
-because core stores only their hashes. The admin UI asks for a system key: it is `NOLAG_SYSTEM_KEY`
-in `.env`.
+because core stores only their hashes.
+
+Nothing asks you for a credential, because the example host authenticates nobody. Every published
+port binds to `127.0.0.1` for exactly that reason.
 
 Connecting is then the same as against hosted NoLag:
 
@@ -114,30 +152,39 @@ client.subscribe("chat/general/messages");
 
 Stop with `docker compose down`, or `docker compose down -v` to discard the data too.
 
+### The example host
+
+`example/` is the shortest host that does anything useful: it owns the DataSource, mounts
+`CoreModule`, and exposes the facades through thin controllers. About two hundred lines, and worth
+reading before you write your own.
+
+It installs `@nolag/core` from a packed tarball rather than compiling it alongside, so a missing
+export or peer fails the build there instead of quietly working.
+
+**It authenticates nobody**, and says so at every boot. That is not an omission: core has no opinion
+about who may call it, and an example with a token check is an example people copy into production.
+
 ### The admin UI
 
-A small browser surface over the configuration endpoints: list projects, read one, create one from a
-configuration document, and delete one. It holds the system key in the tab and forgets it on close.
+A small browser surface over the example host: list projects, read one, create one from a
+configuration document, and delete one.
 
-**Do not expose it publicly.** The system key it holds can read and destroy every project in the
-deployment, and there are no user accounts behind it. Keep it on localhost or behind whatever
-authenticating proxy you already trust.
+**Do not expose it, or the host it talks to.** Anyone who reaches either can read and destroy every
+project and mint credentials for any of them. Set `CORS_ORIGINS` if you serve the UI from somewhere
+other than the compose default; `*` is rejected rather than honoured.
 
-Set `CORS_ORIGINS` on core to the UI's origin if you serve it from somewhere other than the compose
-default. `*` is rejected rather than honoured.
+### Without any of it
 
-### Without the UI
-
-Core is headless by default. Drop the `ui` service and leave `CORS_ORIGINS` empty, and nothing about
-the authorization path changes.
+The library is the deliverable. Drop `example/`, `ui/` and the compose file entirely, write your own
+host, and nothing about the authorization path changes.
 
 ### What the quickstart is not
 
 It is a demonstration, not a deployment. Everything below is a deliberate omission, not an oversight,
 and the list is here so nobody has to discover them the hard way:
 
-- **No TLS anywhere.** Core's API, the broker's WebSocket and the UI are all plaintext HTTP. The
-  system key travels as a bearer token in the clear. Fine over loopback, wrong over a network.
+- **No authentication at all** on the example host, and **no TLS anywhere**. Everything is plaintext
+  HTTP over loopback. Reaching the port is the same as owning every project behind it.
 - **Secrets sit in a plaintext `.env`** that the script generates and chmods to 600. That is not
   secret management.
 - **Postgres runs in a container** with a local volume and no backups, no replication and no tuning.
@@ -145,11 +192,11 @@ and the list is here so nobody has to discover them the hard way:
   restart drops every connection.
 - **Message history is off**, and the store is in-memory. Anything kraken did record would die with
   the container.
-- **The admin UI has no user accounts**, only the system key, and that key can destroy every project.
+- **The admin UI has no accounts and no login**, because the host behind it has none either.
 
-The parts worth keeping in a real deployment are the images themselves and the shape of the wiring:
-core reachable only from the broker, one shared secret between them, migrations applied on boot. The
-rest of it belongs to whatever you already use to run things.
+The part worth keeping in a real deployment is the library and the shape of the wiring: the host owns
+the DataSource, passes core's entities and migrations into it, and mounts the facades behind real
+authentication. The rest belongs to whatever you already use to run things.
 
 ## Verifying a deployment
 
