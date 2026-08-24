@@ -5,16 +5,28 @@
  * topic address is the subject, and the interface is built around reading
  * addresses rather than around cards and charts.
  *
- * Two consequences run through everything below:
+ * Three rules run through everything below:
  *
  *  1. Monospace is the body face. Every identifier, address and credential is
  *     machine-readable text that people compare character by character, so it
  *     gets the dominant face. The proportional face is demoted to chrome.
  *
- *  2. Hue is reserved for address segments. app, scope, room and topic each
- *     keep one colour everywhere they appear, so a four-segment address reads
- *     as scoped at a glance without anyone having to count slashes. Nothing
- *     else in the interface competes for those colours.
+ *  2. Orange is the brand, and it is reserved for interaction. Buttons, links,
+ *     focus, the active row, and the two moments that demand attention. It
+ *     never encodes data.
+ *
+ *  3. Hue encodes address structure. app, scope, room and topic each keep one
+ *     colour everywhere they appear, so a four-segment address reads as scoped
+ *     at a glance without anyone having to count slashes. None of them is
+ *     orange, so brand and meaning never compete.
+ *
+ * Colours come from NoLag's brand manual by way of
+ * titus/packages/portal-app/DESIGN_SPEC.md, so this surface and the hosted
+ * portal are recognisably the same product. Fonts deliberately do not: the
+ * brand faces (Ubuntu, Nunito Sans) load from Google's CDN in the portal, and
+ * this page ships under a strict CSP with no external hosts. An admin surface
+ * for a self-hosted deployment should render identically offline, on an
+ * airgapped network, and behind a corporate proxy. System faces it is.
  */
 
 :root {
@@ -23,48 +35,60 @@
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", sans-serif;
 
-  --ink: #0e141c;
-  --panel: #151e29;
-  --panel-2: #1b2635;
-  --rule: #253243;
-  --rule-soft: #1e2937;
-  --text: #dce5ef;
-  --muted: #8496ab;
-  --faint: #5a6b80;
+  /* Dark theme: NoLag dark blue, not a neutral grey. */
+  --ink: #19293c;
+  --inset: #0f1b2a;
+  --panel: #243447;
+  --panel-2: #2c3f55;
+  --rule: #3d4d61;
+  --rule-soft: #2a3a4d;
+  --text: #ffffff;
+  --muted: #b8c5d6;
+  --faint: #8796a8;
 
-  --seg-app: #5ab3f0;
-  --seg-scope: #e9a23b;
-  --seg-room: #6ecf97;
-  --seg-topic: #b9a2f0;
+  /* Brand. --accent is text-safe on the current background; --accent-fill is
+   * the solid brand orange used behind --accent-ink. */
+  --accent: #ff8a00;
+  --accent-fill: #ff8a00;
+  --accent-ink: #19293c;
 
-  --accent: #5ab3f0;
-  --accent-ink: #06121c;
-  --danger: #f0685a;
+  --danger: #f85149;
+  --focus: #ffcb45;
 
-  --focus: #9ad4ff;
+  /* Address segments. Chosen around orange rather than through it, and spaced
+   * far enough apart in hue to stay distinguishable to most colour-blind
+   * viewers. Position in the address is the primary cue; colour reinforces it. */
+  --seg-app: #58a6ff;
+  --seg-scope: #c4a2ff;
+  --seg-room: #3fd68b;
+  --seg-topic: #ff92b8;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --ink: #eef2f6;
+    --ink: #f7f7f7;
+    --inset: #f0f0f0;
     --panel: #ffffff;
-    --panel-2: #f5f8fb;
-    --rule: #d3dde7;
-    --rule-soft: #e3eaf1;
-    --text: #16202c;
-    --muted: #5b6b7d;
-    --faint: #8496ab;
+    --panel-2: #f0f0f0;
+    --rule: #d0d7de;
+    --rule-soft: #e0e0e0;
+    --text: #19293c;
+    --muted: #3d4d61;
+    --faint: #6e7781;
 
-    --seg-app: #1d78b8;
-    --seg-scope: #a35f00;
-    --seg-room: #1c7a4c;
-    --seg-topic: #6a4bb5;
+    /* Brand orange is 2.4:1 on white, so it cannot carry text here. It stays
+     * as the fill; a darkened orange takes over for anything text-sized. */
+    --accent: #c2410c;
+    --accent-fill: #ff8a00;
+    --accent-ink: #19293c;
 
-    --accent: #1d78b8;
-    --accent-ink: #ffffff;
-    --danger: #b8342a;
+    --danger: #d1242f;
+    --focus: #c2410c;
 
-    --focus: #1d78b8;
+    --seg-app: #0969da;
+    --seg-scope: #7c3aed;
+    --seg-room: #14804a;
+    --seg-topic: #c2255c;
   }
 }
 
@@ -147,9 +171,13 @@ button:disabled {
 }
 
 button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
   color: var(--accent-ink);
+}
+
+button.primary:hover:not(:disabled) {
+  border-color: var(--accent-ink);
 }
 
 button.danger {
@@ -170,7 +198,7 @@ textarea {
   font: inherit;
   font-family: var(--mono);
   color: var(--text);
-  background: var(--ink);
+  background: var(--inset);
   border: 1px solid var(--rule);
   border-radius: 3px;
   padding: 8px 10px;

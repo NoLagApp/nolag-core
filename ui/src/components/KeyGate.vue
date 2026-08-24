@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { coreUrl, listProjects, rememberKey } from "../api";
+import NolagMark from "./NolagMark.vue";
 import TopicAddress from "./TopicAddress.vue";
 
 /**
@@ -39,7 +40,10 @@ async function unlock() {
   <div class="gate">
     <div class="column">
       <section class="thesis">
-        <span class="eyebrow">nolag-core</span>
+        <span class="brand">
+          <NolagMark :size="22" />
+          <span class="eyebrow">nolag-core</span>
+        </span>
         <h1 class="claim">May this actor reach this topic?</h1>
         <div class="sample">
           <TopicAddress app="chat" scope="acme" room="general" topic="messages" />
@@ -92,6 +96,12 @@ async function unlock() {
 
 .thesis {
   margin-bottom: 26px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
 
 .claim {

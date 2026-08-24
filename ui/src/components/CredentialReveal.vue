@@ -89,9 +89,11 @@ function copyAll() {
 </template>
 
 <style scoped>
+/* The one screen that cannot be repeated, so it gets the brand's emphasis
+ * colour rather than a segment hue. */
 .reveal {
   background: var(--panel-2);
-  border: 1px solid var(--seg-scope);
+  border: 1px solid var(--accent-fill);
   border-radius: 4px;
   padding: 20px;
 }

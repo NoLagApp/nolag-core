@@ -283,8 +283,10 @@ client.subscribe("{{ heroAddress.app }}/{{ heroAddress.room }}/{{
   overflow-x: auto;
 }
 
+/* Brand orange, not a segment colour: this is a constraint to notice, not a
+ * part of an address. */
 .restricted {
-  color: var(--seg-scope);
+  color: var(--accent);
   white-space: nowrap;
 }
 

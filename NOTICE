@@ -3,6 +3,18 @@ Copyright 2026 NoLag
 
 This product includes software developed at NoLag (https://nolag.app).
 
+TRADEMARKS
+
+The Apache License does not grant permission to use the trade names,
+trademarks, service marks or product names of the licensor (section 6).
+
+The NoLag name, the NoLag logotype and the isotype mark shipped in
+ui/public/favicon.svg and ui/src/components/NolagMark.vue are trademarks of
+NoLag and are not licensed under Apache 2.0. The code is yours to fork and
+redistribute; the marks are not. If you run a modified version, please replace
+them with your own, so that nobody is misled about who is responsible for
+what they are running.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at

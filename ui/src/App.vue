@@ -14,6 +14,7 @@ import {
 import CredentialReveal from "./components/CredentialReveal.vue";
 import ImportPanel from "./components/ImportPanel.vue";
 import KeyGate from "./components/KeyGate.vue";
+import NolagMark from "./components/NolagMark.vue";
 import ProjectDetail from "./components/ProjectDetail.vue";
 
 type View = "project" | "import";
@@ -114,7 +115,8 @@ function lock() {
   <div v-else class="shell">
     <header class="bar">
       <span class="brand">
-        <span class="mark">nolag</span><span class="faint">-core</span>
+        <NolagMark :size="17" />
+        <span class="wordmark">nolag<span class="faint">-core</span></span>
       </span>
       <span class="eyebrow center">self-hosted</span>
       <span class="inline">
@@ -209,14 +211,20 @@ function lock() {
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The mark is the brand; the word is not orange as well. Saying "nolag-core"
+ * rather than "NoLag" is deliberate: this is the authorization core, not the
+ * hosted product, and the header should not imply otherwise. */
+.wordmark {
   font-family: var(--sans);
   font-size: 13px;
   font-weight: 640;
   letter-spacing: -0.01em;
-}
-
-.mark {
-  color: var(--accent);
+  color: var(--text);
 }
 
 .center {
