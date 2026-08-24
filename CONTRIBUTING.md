@@ -1,25 +1,33 @@
 # Contributing
 
-Thank you for the interest. **This project is not open for external contributions yet.**
+Thank you for the interest. **This project does not accept external code contributions.**
 
-Pull requests opened right now will be left unmerged, not because they are unwelcome but because we
-have not finalised the contributor agreement. Merging contributed code before that is in place would
-leave the project unable to make licence decisions later without tracking down every past
-contributor. That is a problem worth avoiding rather than inheriting.
+That is a deliberate choice, not an oversight, and this section explains it rather than leaving you to
+guess.
 
-What is being decided:
+Accepting a contribution without a contributor agreement in place means the contributor keeps their
+copyright. Any future licence decision would then need every past contributor's agreement, which in
+practice means it cannot be made. Deciding that question properly costs real thought and a lawyer, and
+this repository is young enough that it would be deciding it in the abstract. So it stays closed until
+there is a concrete reason to open it.
 
-- a Contributor Licence Agreement, or a Developer Certificate of Origin with explicit terms
-- how the sign-off is recorded and checked in CI
+**Nothing about that affects the code you already have.** Every released version is Apache 2.0 and
+stays Apache 2.0 permanently. That licence is irrevocable: a fork taken today remains yours whatever
+happens to this repository, to NoLag, or to how the project is licensed in future. The continuity this
+repository exists to provide does not depend on contributions being open.
 
-Once that lands, this file will be replaced with real instructions and the repository will accept
-pull requests normally.
+If you have a patch you genuinely want to land, open an issue describing it. If it is worth merging, it
+is worth sorting out the agreement for, and that is the trigger for doing so.
 
-## In the meantime
+## What is welcome
 
-Issues are useful and welcome. Bug reports, questions about the authorization model, and gaps in the
-documentation all help. So does telling us what a self-hosted deployment needs that this does not yet
-provide.
+Issues, and plenty of them:
+
+- bug reports, especially anything where an authorization decision looks wrong
+- questions about the authorization model, which usually mean the documentation is unclear
+- gaps in a self-hosted deployment: what does this not do that you need it to?
+
+Forks are fine too. Apache 2.0 means you do not need anyone's permission.
 
 ## Reporting a security issue
 

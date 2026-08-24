@@ -172,5 +172,5 @@ Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 ## Contributing
 
-Not open for external contributions yet. See [CONTRIBUTING.md](CONTRIBUTING.md) for why and for what
-changes when that opens up.
+Issues are welcome; code contributions are not accepted. See [CONTRIBUTING.md](CONTRIBUTING.md) for
+why, and for what that does and does not mean for the licence on the code you already have.
