@@ -161,6 +161,21 @@ npm run test:stack
 19 tests drive the running stack with a real `@nolag/js-sdk` client: authentication, a pub/sub round
 trip, restricted apps, private rooms, and isolation between two tenants.
 
+The library has its own suites, which need Postgres but not the whole stack:
+
+```sh
+./scripts/test-db.sh     # create and migrate the test database
+npm test                 # unit
+npm run test:e2e         # against real Postgres
+npm run test:package     # pack, install into a scratch project, boot it
+```
+
+`test:package` is the one that catches what nothing else can. Everything else tests the source; that
+one tests the artefact, the way a consumer gets it. A NestJS library can compile, pass every test, and
+still be broken on install: a peer shipped as a dependency gives the consumer two copies of TypeORM
+and two metadata registries, a `files` omission makes an import resolve to nothing, and neither is
+visible from inside the repository.
+
 The suite starts by checking that a token core never issued is refused. Kraken's default auth backend
 is a static token file with an allow-all switch, and a stack wired that way accepts everything, so a
 happy-path test would pass green while proving nothing. If that first check fails, every test in the
