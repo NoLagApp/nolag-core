@@ -2,7 +2,6 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { CoreModule } from "../src/core.module";
-import { CORE_DATA_SOURCE } from "../src/core.options";
 import { CoreConfig } from "../src/core.config";
 import { CORE_AUDIT_SINK, CoreAuditEvent } from "../src/core.options";
 import { allCoreMigrations, coreEntities } from "../src/schema";
@@ -38,7 +37,6 @@ describe("module wiring", () => {
       imports: [
         TypeOrmModule.forRoot({
           // Core binds to this name, not to the default connection.
-          name: CORE_DATA_SOURCE,
           type: "postgres",
           host: process.env.POSTGRES_HOST || "localhost",
           port: parseInt(process.env.POSTGRES_PORT || "5432", 10),

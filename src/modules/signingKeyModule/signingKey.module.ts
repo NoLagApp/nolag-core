@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule, getDataSourceToken } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { DataSource } from "typeorm";
 import { SigningKeyEntity } from "./signingKey.entity";
 import { SigningKeyFacade } from "./signingKey.facade";
@@ -9,7 +8,7 @@ import { SigningKeyService } from "./signingKey.service";
 import { SigningKeyQueryService } from "./query/signingKey.query.service";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SigningKeyEntity], CORE_DATA_SOURCE)],
+  imports: [TypeOrmModule.forFeature([SigningKeyEntity])],
   providers: [
     SigningKeyService,
     SigningKeyQueryService,
@@ -17,7 +16,7 @@ import { SigningKeyQueryService } from "./query/signingKey.query.service";
     {
       provide: SigningKeyRepository,
       useFactory: (ds: DataSource) => new SigningKeyRepository(ds),
-      inject: [getDataSourceToken(CORE_DATA_SOURCE)],
+      inject: [getDataSourceToken()],
     },
   ],
   exports: [SigningKeyFacade],

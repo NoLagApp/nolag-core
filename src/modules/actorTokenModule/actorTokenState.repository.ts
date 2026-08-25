@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import {
   ActorTokenStateEntity,
   IConnectionState,
@@ -16,7 +15,7 @@ import {
 @Injectable()
 export class ActorTokenStateRepository extends Repository<ActorTokenStateEntity> {
   constructor(
-    @InjectRepository(ActorTokenStateEntity, CORE_DATA_SOURCE)
+    @InjectRepository(ActorTokenStateEntity)
     repository: Repository<ActorTokenStateEntity>,
   ) {
     super(repository.target, repository.manager, repository.queryRunner);

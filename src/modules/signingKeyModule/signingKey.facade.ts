@@ -2,7 +2,6 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { notFoundException } from "../../utils/exceptions";
 import { SigningKeyEntity } from "./signingKey.entity";
 import {
@@ -29,7 +28,7 @@ export class SigningKeyFacade {
   constructor(
     private readonly _signingKeyService: SigningKeyService,
     private readonly _queryService: SigningKeyQueryService,
-    @InjectDataSource(CORE_DATA_SOURCE)
+    @InjectDataSource()
     private readonly _dataSource: DataSource,
   ) {}
 

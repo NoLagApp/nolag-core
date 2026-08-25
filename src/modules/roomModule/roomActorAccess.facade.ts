@@ -1,5 +1,4 @@
 import { InjectDataSource } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
 import { DataSource, IsNull } from "typeorm";
 import { EActorType } from "../actorTokenModule/enum/EActorType.enum";
@@ -29,7 +28,7 @@ export class RoomActorAccessFacade {
 
   constructor(
     private readonly _repository: RoomActorAccessRepository,
-    @InjectDataSource(CORE_DATA_SOURCE)
+    @InjectDataSource()
     private readonly _dataSource: DataSource,
   ) {}
 

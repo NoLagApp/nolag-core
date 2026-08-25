@@ -3,7 +3,6 @@ import { Test } from "@nestjs/testing";
 import { TypeOrmModule, getDataSourceToken } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { CoreModule } from "../src/core.module";
-import { CORE_DATA_SOURCE } from "../src/core.options";
 import { allCoreMigrations, coreEntities } from "../src/schema";
 import { AccessScopeFacade } from "../src/modules/accessScopeModule/accessScope.facade";
 import { ActorTokenEntity } from "../src/modules/actorTokenModule/actorToken.entity";
@@ -50,7 +49,6 @@ describe("configuration facades", () => {
       imports: [
         TypeOrmModule.forRoot({
           // Core binds to this name, not to the default connection.
-          name: CORE_DATA_SOURCE,
           type: "postgres",
           host: process.env.POSTGRES_HOST || "localhost",
           port: parseInt(process.env.POSTGRES_PORT || "5432", 10),
@@ -70,7 +68,7 @@ describe("configuration facades", () => {
     app = moduleRef.createNestApplication();
     await app.init();
 
-    ds = app.get<DataSource>(getDataSourceToken(CORE_DATA_SOURCE));
+    ds = app.get<DataSource>(getDataSourceToken());
     projects = app.get(ProjectFacade);
     apps = app.get(PlatformAppFacade);
     rooms = app.get(RoomFacade);

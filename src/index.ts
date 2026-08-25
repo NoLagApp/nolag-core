@@ -20,7 +20,6 @@ export { CoreModule } from "./core.module";
 export { CoreConfig } from "./core.config";
 export {
   CORE_AUDIT_SINK,
-  CORE_DATA_SOURCE,
   CORE_OPTIONS,
   NoopAuditSink,
   type CoreAuditEvent,

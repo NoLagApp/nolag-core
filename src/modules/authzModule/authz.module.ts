@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { AccessScopeEntity } from "../accessScopeModule/accessScope.entity";
 import { ActorAppAccessEntity } from "../actorTokenModule/actorAppAccess.entity";
 import { ActorTokenEntity } from "../actorTokenModule/actorToken.entity";
@@ -36,9 +35,7 @@ import { AuthzService } from "./authz.service";
         ActorTokenEntity,
         ActorTokenStateEntity,
         ActorAppAccessEntity,
-      ],
-      CORE_DATA_SOURCE,
-    ),
+      ]),
     ActorTokenModule,
     SigningKeyModule,
   ],

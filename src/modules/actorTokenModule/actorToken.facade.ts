@@ -3,7 +3,6 @@ import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
 import { GeneratedCredential } from "../../common/utils/secretHash";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { notFoundException } from "../../utils/exceptions";
 import { ActorTokenEntity } from "./actorToken.entity";
 import { ActorTokenService } from "./actorToken.service";
@@ -38,7 +37,7 @@ export class ActorTokenFacade {
     private readonly _actorTokenService: ActorTokenService,
     private readonly _queryService: ActorTokenQueryService,
     private readonly _stateRepository: ActorTokenStateRepository,
-    @InjectDataSource(CORE_DATA_SOURCE)
+    @InjectDataSource()
     private readonly _dataSource: DataSource,
   ) {}
 

@@ -73,6 +73,12 @@ import { CoreModule, coreEntities, allCoreMigrations, AuthzFacade } from "@nolag
 export class MyHostModule {}
 ```
 
+Core binds to TypeORM's **default** connection. It does not open one of its own,
+so its tables have to be on the DataSource you already have. If your host owns
+entity classes for these same tables, register both: TypeORM maps two classes to
+one table without complaint, and a write through one class only touches the
+columns that class declares.
+
 Then inject `AuthzFacade` behind whatever authentication you already have.
 
 ## The contract

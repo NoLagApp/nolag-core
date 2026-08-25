@@ -1,6 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { TypeOrmModule, TypeOrmModuleOptions } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE, allCoreMigrations, coreEntities } from "@nolag/core";
+import { allCoreMigrations, coreEntities } from "@nolag/core";
 import { ExampleConfig } from "../config/example.config";
 import { DatabaseService } from "./database.service";
 
@@ -18,18 +18,12 @@ const config = new ExampleConfig();
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      // Core binds to this connection name, not to the default one. A host with
-      // its own database registers both; this one has only core's.
-      name: CORE_DATA_SOURCE,
+      // Core binds to the default connection. It never opens one of its own,
+      // so its entities go on whatever DataSource the host already has.
       // Constructed rather than injected: TypeOrmModuleAsyncOptions has no
       // `providers`, and ExampleConfig only reads process.env, so there is
       // nothing to wait for.
       useFactory: (): TypeOrmModuleOptions => ({
-        // `name` has to be here as well as on forRootAsync above.
-        // TypeOrmCoreModule.onApplicationShutdown derives the injection token
-        // from the *resolved options*, so without it the shutdown hook looks
-        // for the default DataSource, does not find it, and app.close() throws.
-        name: CORE_DATA_SOURCE,
         type: "postgres",
 
         /* ── Connection target ─────────────────────────────────────────── */

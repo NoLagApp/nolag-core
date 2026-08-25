@@ -1,5 +1,4 @@
 import { InjectDataSource } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
 import { DataSource, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
@@ -41,7 +40,7 @@ export class PlatformAppFacade {
   constructor(
     private readonly _repository: PlatformAppRepository,
     private readonly _queryService: PlatformAppQueryService,
-    @InjectDataSource(CORE_DATA_SOURCE)
+    @InjectDataSource()
     private readonly _dataSource: DataSource,
     @Inject(CORE_AUDIT_SINK) private readonly _audit: CoreAuditSink,
   ) {}

@@ -1,6 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { DataSource, EntityManager, In, IsNull } from "typeorm";
 import { isClientTokenJwt } from "../../utils/clientToken";
 import { AccessScopeEntity } from "../accessScopeModule/accessScope.entity";
@@ -77,7 +76,7 @@ export class AuthzService {
   private readonly _logger = new Logger(AuthzService.name);
 
   constructor(
-    @InjectDataSource(CORE_DATA_SOURCE)
+    @InjectDataSource()
     private readonly _dataSource: DataSource,
     private readonly _actorTokenFacade: ActorTokenFacade,
     private readonly _signingKeyFacade: SigningKeyFacade,

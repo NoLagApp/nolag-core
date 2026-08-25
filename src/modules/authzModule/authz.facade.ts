@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { DataSource } from "typeorm";
 import { AuthzService } from "./authz.service";
 import {
@@ -14,7 +13,7 @@ import {
 export class AuthzFacade {
   constructor(
     private readonly _authzService: AuthzService,
-    @InjectDataSource(CORE_DATA_SOURCE)
+    @InjectDataSource()
     private readonly _dataSource: DataSource,
   ) {}
 

@@ -1,5 +1,4 @@
 import { InjectDataSource } from "@nestjs/typeorm";
-import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
 import { DataSource, EntityManager, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
@@ -52,7 +51,7 @@ export class RoomFacade {
   constructor(
     private readonly _service: RoomService,
     private readonly _queryService: RoomQueryService,
-    @InjectDataSource(CORE_DATA_SOURCE)
+    @InjectDataSource()
     private readonly _dataSource: DataSource,
   ) {}
 

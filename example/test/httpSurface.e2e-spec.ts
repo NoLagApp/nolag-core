@@ -6,7 +6,7 @@ import {
 import { Test } from "@nestjs/testing";
 import { DataSource } from "typeorm";
 import request from "supertest";
-import { ActorTokenEntity, CORE_DATA_SOURCE, ProjectEntity } from "@nolag/core";
+import { ActorTokenEntity, ProjectEntity } from "@nolag/core";
 import { getDataSourceToken } from "@nestjs/typeorm";
 import { HostModule } from "../src/host.module";
 
@@ -75,7 +75,7 @@ describe("HTTP surface", () => {
     app.enableVersioning({ type: VersioningType.URI });
     await app.init();
 
-    ds = app.get<DataSource>(getDataSourceToken(CORE_DATA_SOURCE));
+    ds = app.get<DataSource>(getDataSourceToken());
   });
 
   afterEach(async () => {

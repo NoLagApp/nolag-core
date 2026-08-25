@@ -161,7 +161,6 @@ const core = require("@nolag/core");
 const required = [
   "CoreModule",
   "CoreConfig",
-  "CORE_DATA_SOURCE",
   "coreEntities",
   "coreInitialMigrations",
   "allCoreMigrations",
@@ -192,11 +191,8 @@ if (core.coreEntities.length === 0) {
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      // Core binds to this connection name, not to the default one. The name
-      // goes on both the call and the options: TypeOrmCoreModule's shutdown
-      // hook derives its injection token from the resolved options, so without
-      // it app.close() looks for the default DataSource and throws.
-      name: core.CORE_DATA_SOURCE,
+      // Core binds to the default connection, so this is the only one there
+      // is. A real host registers its own entities alongside core's.
       type: "postgres",
       host: process.env.POSTGRES_HOST,
       port: parseInt(process.env.POSTGRES_PORT || "5432", 10),
