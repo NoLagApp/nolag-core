@@ -109,6 +109,11 @@ export { EAppStatus } from "./modules/platformAppModule/enum/EAppStatus.enum";
 export { ERoomStatus } from "./modules/roomModule/enum/ERoomStatus.enum";
 export { IsValidTopicName } from "./common/validators/isValidTopicName.validator";
 export { ESigningKeyStatus } from "./modules/signingKeyModule/enum/ESigningKeyStatus.enum";
+export { ESigningKeyPrefix } from "./modules/signingKeyModule/enum/ESigningKeyPrefix.enum";
+export type {
+  GeneratedSigningKey,
+  VerifiedClientToken,
+} from "./modules/signingKeyModule/signingKey.service";
 
 /* ── Entities ───────────────────────────────────────────────────────────
  *

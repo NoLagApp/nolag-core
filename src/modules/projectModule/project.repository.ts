@@ -27,4 +27,8 @@ export class ProjectRepository extends Repository<ProjectEntity> {
       order: { createdAt: "ASC" },
     });
   }
+
+  countByOrganizationId(organizationId: string): Promise<number> {
+    return this.count({ where: { organizationId, deletedAt: IsNull() } });
+  }
 }

@@ -43,6 +43,19 @@ export class ProjectFacade {
     return this._repository.findByOrganizationId(organizationId);
   }
 
+  /**
+   * How many projects a tenant holds. Whatever enforces a plan limit needs
+   * this before it decides; core does not enforce one itself.
+   */
+  countByOrganization(organizationId: string): Promise<number> {
+    return this._repository.countByOrganizationId(organizationId);
+  }
+
+  /** Nullable lookup, for callers that treat "not there" as an answer. */
+  findProjectById(projectId: string): Promise<ProjectEntity | null> {
+    return this._repository.findById(projectId);
+  }
+
   async getProjectById(projectId: string): Promise<ProjectEntity> {
     const project = await this._repository.findById(projectId);
     if (!project) {
