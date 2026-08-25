@@ -216,7 +216,10 @@ class HostModule {}
 
 async function main() {
   const app = await NestFactory.createApplicationContext(HostModule, {
+    // abortOnError, because without it Nest exits the process itself on a
+    // failed connection and this script reports exit 1 with nothing said.
     logger: false,
+    abortOnError: false,
   });
 
   // Resolving a facade is what proves the container assembled: entity
@@ -240,7 +243,15 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error("  boot failed:", error && error.message ? error.message : error);
+  console.error(
+    `  connection was ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}:` +
+      `${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DATABASE}`,
+  );
+  console.error(
+    "  this step needs a reachable Postgres; set POSTGRES_HOST, POSTGRES_PORT,",
+  );
+  console.error("  POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DATABASE.");
   process.exit(1);
 });
 EOF
