@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { PlatformAppEntity } from "../platformAppModule/platformApp.entity";
 import { RoomEntity } from "./room.entity";
 import { RoomFacade } from "./room.facade";
@@ -12,11 +13,10 @@ import { RoomQueryService } from "./query/room.query.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      RoomEntity,
-      RoomActorAccessEntity,
-      PlatformAppEntity,
-    ]),
+    TypeOrmModule.forFeature(
+      [RoomEntity, RoomActorAccessEntity, PlatformAppEntity],
+      CORE_DATA_SOURCE,
+    ),
   ],
   providers: [
     RoomService,

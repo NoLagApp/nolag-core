@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { DataSource, IsNull } from "typeorm";
 import { notFoundException } from "../../utils/exceptions";
 import { ActorTokenEntity } from "../actorTokenModule/actorToken.entity";
@@ -16,7 +17,8 @@ export class ProjectConfigFacade {
 
   constructor(
     private readonly _service: ProjectConfigService,
-    @InjectDataSource() private readonly _dataSource: DataSource,
+    @InjectDataSource(CORE_DATA_SOURCE)
+    private readonly _dataSource: DataSource,
   ) {}
 
   /** One transaction: a half-imported authorization model is worse than none. */

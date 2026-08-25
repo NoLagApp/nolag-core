@@ -1,13 +1,27 @@
+import { InjectDataSource } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
 import { DataSource, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
-import { conflictException, notFoundException } from "../../utils/exceptions";
+import {
+  badRequestException,
+  conflictException,
+  notFoundException,
+} from "../../utils/exceptions";
 import { PlatformAppEntity } from "../platformAppModule/platformApp.entity";
 import { RoomCreateDto, RoomPatchDto } from "./dto/room.dto";
 import { RoomEntity } from "./room.entity";
 import { RoomService } from "./room.service";
 import { RoomQuery } from "./query/room.query";
 import { RoomQueryService } from "./query/room.query.service";
+
+/**
+ * How many rooms one app may hold when they are being created at runtime.
+ *
+ * A guard against a typo'd slug in a loop, not a product limit. The caller can
+ * raise it.
+ */
+const DEFAULT_ROOM_CAP = 1000;
 
 /** WebRTC signalling, opt-in per room. Colons because a slash separates parts. */
 const WEBRTC_TOPICS = [
@@ -38,6 +52,7 @@ export class RoomFacade {
   constructor(
     private readonly _service: RoomService,
     private readonly _queryService: RoomQueryService,
+    @InjectDataSource(CORE_DATA_SOURCE)
     private readonly _dataSource: DataSource,
   ) {}
 
@@ -106,6 +121,52 @@ export class RoomFacade {
         manager,
       );
     });
+  }
+
+  /**
+   * Create a room if it is not already there, under a cap.
+   *
+   * For per-entity rooms created at runtime: one per match, per device, per
+   * order. The caller decides *whether* runtime provisioning is allowed for
+   * this app, because that is deployment policy and core has no column for it.
+   * What core owns is doing it safely: idempotent on the slug, capped so a
+   * typo'd loop cannot fill the table, and racing safely against a concurrent
+   * creator.
+   *
+   * Rooms are never created implicitly on the data path. The broker refuses an
+   * unknown room loudly, which is what makes a typo a visible error rather than
+   * a silently separate room nobody else can see.
+   */
+  async ensureRoom(
+    appId: string,
+    data: RoomCreateDto,
+    maxRooms = DEFAULT_ROOM_CAP,
+  ): Promise<RoomEntity> {
+    const slug = data.slug ?? this._generateSlug(data.name);
+
+    const existing = await this._service.findBySlugAndApp(slug, appId);
+    if (existing) {
+      return existing;
+    }
+
+    const count = await this._service.countByAppId(appId);
+    if (count >= maxRooms) {
+      throw badRequestException(this._logger, {
+        errorMsgUser: `App ${appId} has reached its room cap (${maxRooms})`,
+      });
+    }
+
+    try {
+      return await this.createRoom(appId, { ...data, slug });
+    } catch (error) {
+      // Lost a creation race. The partial unique index rejected the insert, so
+      // the room now exists and returning it is the idempotent answer.
+      const raced = await this._service.findBySlugAndApp(slug, appId);
+      if (raced) {
+        return raced;
+      }
+      throw error;
+    }
   }
 
   updateRoom(

@@ -48,6 +48,12 @@ export class RoomService {
     return this._repository.findByAppId(appId);
   }
 
+  countByAppId(appId: string, manager?: EntityManager): Promise<number> {
+    return this._repo(manager).count({
+      where: { appId, deletedAt: IsNull() },
+    });
+  }
+
   async slugExists(
     slug: string,
     appId: string,

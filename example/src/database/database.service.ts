@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "@nolag/core";
 import { DataSource } from "typeorm";
 import { ExampleConfig } from "../config/example.config";
 
@@ -8,7 +9,8 @@ export class DatabaseService implements OnModuleInit {
   private readonly logger = new Logger(DatabaseService.name);
 
   constructor(
-    @InjectDataSource() private readonly dataSource: DataSource,
+    @InjectDataSource(CORE_DATA_SOURCE)
+    private readonly dataSource: DataSource,
     private readonly config: ExampleConfig,
   ) {}
 

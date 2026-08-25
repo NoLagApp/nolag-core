@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { IsNull, Repository } from "typeorm";
 import { LobbyEntity } from "./lobby.entity";
 
@@ -10,7 +11,7 @@ export class LobbyRepository extends Repository<LobbyEntity> {
   // (target, manager, queryRunner), so a DataSource-shaped constructor breaks
   // the moment a facade wants this repository inside a transaction.
   constructor(
-    @InjectRepository(LobbyEntity)
+    @InjectRepository(LobbyEntity, CORE_DATA_SOURCE)
     repository: Repository<LobbyEntity>,
   ) {
     super(repository.target, repository.manager, repository.queryRunner);

@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { IsNull, Repository } from "typeorm";
 import { EActorType } from "../actorTokenModule/enum/EActorType.enum";
 import { RoomActorAccessEntity } from "./roomActorAccess.entity";
@@ -18,7 +19,7 @@ export class RoomActorAccessRepository extends Repository<RoomActorAccessEntity>
   // (target, manager, queryRunner), so a DataSource-shaped constructor breaks
   // the moment a facade wants this repository inside a transaction.
   constructor(
-    @InjectRepository(RoomActorAccessEntity)
+    @InjectRepository(RoomActorAccessEntity, CORE_DATA_SOURCE)
     repository: Repository<RoomActorAccessEntity>,
   ) {
     super(repository.target, repository.manager, repository.queryRunner);

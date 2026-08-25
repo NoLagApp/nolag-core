@@ -73,3 +73,20 @@ export class NoopAuditSink implements CoreAuditSink {
     // Nothing. A self-hosted deployment that wants an audit trail supplies one.
   }
 }
+
+/**
+ * The TypeORM connection name core binds to.
+ *
+ * Fixed, not configurable. `@InjectRepository` and `@InjectDataSource` are
+ * decorators evaluated at class-definition time, so this cannot come from
+ * `forRoot` options. A host registers its DataSource under this name:
+ *
+ * ```ts
+ * TypeOrmModule.forRoot({ name: CORE_DATA_SOURCE, entities: [...coreEntities] })
+ * ```
+ *
+ * The alternative was binding to TypeORM's default connection, which breaks the
+ * moment a host has its own: core's repositories would resolve against the
+ * host's entity metadata, where core's tables do not exist.
+ */
+export const CORE_DATA_SOURCE = "nolag-core";

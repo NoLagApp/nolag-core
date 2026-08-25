@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, EntityManager, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
-import { CORE_AUDIT_SINK } from "../../core.options";
+import { CORE_AUDIT_SINK, CORE_DATA_SOURCE } from "../../core.options";
 import type { CoreAuditSink } from "../../core.options";
 import { notFoundException } from "../../utils/exceptions";
 import {
@@ -29,6 +30,7 @@ export class ProjectFacade {
   constructor(
     private readonly _repository: ProjectRepository,
     private readonly _queryService: ProjectQueryService,
+    @InjectDataSource(CORE_DATA_SOURCE)
     private readonly _dataSource: DataSource,
     @Inject(CORE_AUDIT_SINK) private readonly _audit: CoreAuditSink,
   ) {}

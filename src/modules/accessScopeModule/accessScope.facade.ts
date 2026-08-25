@@ -1,3 +1,5 @@
+import { InjectDataSource } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
 import { DataSource, IsNull, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
@@ -31,6 +33,7 @@ export class AccessScopeFacade {
   constructor(
     private readonly _service: AccessScopeService,
     private readonly _queryService: AccessScopeQueryService,
+    @InjectDataSource(CORE_DATA_SOURCE)
     private readonly _dataSource: DataSource,
   ) {}
 

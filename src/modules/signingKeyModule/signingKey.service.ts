@@ -6,7 +6,14 @@ import { TtlCache } from "../../common/utils/ttlCache";
 import { CoreConfig } from "../../core.config";
 import { ESigningKeyPrefix } from "./enum/ESigningKeyPrefix.enum";
 import { ESigningKeyStatus } from "./enum/ESigningKeyStatus.enum";
+import { EntityManager, IsNull, UpdateResult } from "typeorm";
+import { badRequestException } from "../../utils/exceptions";
 import { SigningKeyEntity } from "./signingKey.entity";
+import {
+  CreatedSigningKey,
+  SigningKeyCreateDto,
+  SigningKeyPatchDto,
+} from "./dto/signingKey.dto";
 import { SigningKeyRepository } from "./signingKey.repository";
 
 export interface GeneratedSigningKey {
@@ -240,5 +247,128 @@ export class SigningKeyService {
   /** Drop a key from the kid cache, so a revocation takes effect immediately. */
   invalidateCache(keyId: string): void {
     this._kidCache.delete(keyId);
+  }
+
+  /* ── CRUD ─────────────────────────────────────────────────────────────
+   *
+   * Ported from Titus's `signingKeyModule/signingKey.service.ts`.
+   */
+
+  private _repo(manager?: EntityManager) {
+    return manager
+      ? manager.getRepository(SigningKeyEntity)
+      : this._signingKeyRepository;
+  }
+
+  findByIdAndProject(
+    signingKeyId: string,
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<SigningKeyEntity | null> {
+    return this._repo(manager).findOne({
+      where: { signingKeyId, projectId, deletedAt: IsNull() },
+    });
+  }
+
+  /**
+   * Mint a signing key and return it once.
+   *
+   * The secret is stored encrypted rather than hashed, because HS256
+   * verification needs the original. That is why losing
+   * SIGNING_KEY_ENCRYPTION_KEY makes every existing key unusable.
+   */
+  async createSigningKey(
+    projectId: string,
+    data: SigningKeyCreateDto,
+    manager?: EntityManager,
+  ): Promise<CreatedSigningKey> {
+    const prefix =
+      data.environment === "sandbox"
+        ? ESigningKeyPrefix.Sandbox
+        : ESigningKeyPrefix.Live;
+
+    const generated = this.generateSigningKey(prefix);
+
+    const entity = new SigningKeyEntity();
+    entity.projectId = projectId;
+    entity.keyId = generated.keyId;
+    entity.secretEncrypted = this.encryptForStorage(generated.secret);
+    entity.name = data.name;
+    entity.status = ESigningKeyStatus.Active;
+
+    const saved = await this._repo(manager).save(entity);
+
+    return { entity: saved, signingKey: generated.signingKey };
+  }
+
+  updateLock(
+    signingKeyId: string,
+    projectId: string,
+    manager: EntityManager,
+  ): Promise<SigningKeyEntity | null> {
+    const alias = SigningKeyEntity.entityName();
+    return manager
+      .createQueryBuilder(SigningKeyEntity, alias)
+      .where(
+        `${alias}.signingKeyId = :signingKeyId AND ${alias}.projectId = :projectId`,
+        { signingKeyId, projectId },
+      )
+      .andWhere(`${alias}.deletedAt IS NULL`)
+      .setLock("pessimistic_read")
+      .getOne();
+  }
+
+  async patchSigningKey(
+    signingKeyId: string,
+    projectId: string,
+    data: SigningKeyPatchDto,
+    manager?: EntityManager,
+  ): Promise<SigningKeyEntity> {
+    const repo = this._repo(manager);
+
+    const entity = await repo.findOne({
+      where: { signingKeyId, projectId, deletedAt: IsNull() },
+    });
+
+    if (!entity) {
+      throw badRequestException(this._logger, {
+        errorMsgUser: "Could not update signing key",
+        errorMsgSystem: "SigningKeyService:patchSigningKey:not_found",
+      });
+    }
+
+    if (data.name !== undefined) entity.name = data.name;
+    if (data.status !== undefined) entity.status = data.status;
+
+    const saved = await repo.save(entity);
+
+    // Disabling a key has to stop new tokens verifying now, not in 60 seconds.
+    this.invalidateCache(entity.keyId);
+
+    return saved;
+  }
+
+  async removeSigningKey(
+    signingKeyId: string,
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<UpdateResult> {
+    const existing = await this.findByIdAndProject(
+      signingKeyId,
+      projectId,
+      manager,
+    );
+
+    const result = await this._repo(manager).softDelete({
+      signingKeyId,
+      projectId,
+      deletedAt: IsNull(),
+    });
+
+    if (existing) {
+      this.invalidateCache(existing.keyId);
+    }
+
+    return result;
   }
 }

@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { CoreModule } from "../src/core.module";
+import { CORE_DATA_SOURCE } from "../src/core.options";
 import { CoreConfig } from "../src/core.config";
 import { CORE_AUDIT_SINK, CoreAuditEvent } from "../src/core.options";
 import { allCoreMigrations, coreEntities } from "../src/schema";
@@ -36,6 +37,8 @@ describe("module wiring", () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
+          // Core binds to this name, not to the default connection.
+          name: CORE_DATA_SOURCE,
           type: "postgres",
           host: process.env.POSTGRES_HOST || "localhost",
           port: parseInt(process.env.POSTGRES_PORT || "5432", 10),
@@ -79,6 +82,22 @@ describe("module wiring", () => {
     ["ProjectConfigFacade", ProjectConfigFacade],
   ])("resolves %s from the container", (_name, token) => {
     expect(app.get(token)).toBeDefined();
+  });
+
+  it.each([
+    ["ActorTokenFacade CRUD", "ActorTokenFacade", ["listActorTokens", "createActorToken", "updateActorToken", "deleteActorToken", "resolveActorTokenId", "updateActorState", "clearActorState"]],
+    ["SigningKeyFacade CRUD", "SigningKeyFacade", ["listSigningKeys", "getSigningKey", "createSigningKey", "updateSigningKey", "deleteSigningKey"]],
+    ["RoomFacade ensureRoom", "RoomFacade", ["ensureRoom"]],
+  ])("exposes %s", (_label, _name, methods) => {
+    const token = {
+      ActorTokenFacade,
+      SigningKeyFacade,
+      RoomFacade,
+    }[_name as "ActorTokenFacade" | "SigningKeyFacade" | "RoomFacade"];
+    const facade = app.get(token) as unknown as Record<string, unknown>;
+    for (const method of methods as string[]) {
+      expect(typeof facade[method]).toBe("function");
+    }
   });
 
   it("hands the host's options through to CoreConfig", () => {

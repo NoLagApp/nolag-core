@@ -7,7 +7,14 @@ import {
   splitCredential,
   verifySecretHash,
 } from "../../common/utils/secretHash";
+import { EntityManager, IsNull, UpdateResult } from "typeorm";
+import { badRequestException } from "../../utils/exceptions";
 import { ActorTokenEntity } from "./actorToken.entity";
+import {
+  ActorTokenCreateDto,
+  ActorTokenPatchDto,
+  CreatedActorToken,
+} from "./dto/actorToken.dto";
 import { ActorTokenRepository } from "./actorToken.repository";
 import { EActorTokenPrefix } from "./enum/EActorTokenPrefix.enum";
 import { EActorTokenStatus } from "./enum/EActorTokenStatus.enum";
@@ -139,5 +146,128 @@ export class ActorTokenService {
     void this._actorTokenRepository
       .updateLastUsed(actorTokenId)
       .catch((err) => this._logger.error("Failed to update lastUsedAt", err));
+  }
+
+  /* ── CRUD ─────────────────────────────────────────────────────────────
+   *
+   * Ported from Titus's `actorTokenModule/actorToken.service.ts`. Every read
+   * filters `deletedAt IS NULL` explicitly: a resurrected actor is an actor
+   * somebody revoked.
+   */
+
+  private _repo(manager?: EntityManager) {
+    return manager
+      ? manager.getRepository(ActorTokenEntity)
+      : this._actorTokenRepository;
+  }
+
+  findByIdAndProject(
+    actorTokenId: string,
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<ActorTokenEntity | null> {
+    return this._repo(manager).findOne({
+      where: { actorTokenId, projectId, deletedAt: IsNull() },
+    });
+  }
+
+  listByProjectId(projectId: string): Promise<ActorTokenEntity[]> {
+    return this._actorTokenRepository.find({
+      where: { projectId, deletedAt: IsNull() },
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  /**
+   * Mint an actor and return its credential once.
+   *
+   * Only the hash is stored, so the caller either hands `accessToken` to
+   * whoever needs it now or it is gone.
+   */
+  async createActorToken(
+    projectId: string,
+    data: ActorTokenCreateDto,
+    manager?: EntityManager,
+  ): Promise<CreatedActorToken> {
+    const generated = this.generateActorToken();
+
+    const entity = new ActorTokenEntity();
+    entity.projectId = projectId;
+    entity.keyId = generated.keyId;
+    entity.secretHash = generated.secretHash;
+    entity.name = data.name;
+    entity.actorType = data.actorType;
+    entity.status = EActorTokenStatus.Active;
+    entity.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
+    entity.metadata = data.metadata ?? null;
+    entity.accessScopeId = data.accessScopeId ?? null;
+
+    const saved = await this._repo(manager).save(entity);
+
+    return { entity: saved, accessToken: generated.credential };
+  }
+
+  updateLock(
+    actorTokenId: string,
+    projectId: string,
+    manager: EntityManager,
+  ): Promise<ActorTokenEntity | null> {
+    const alias = ActorTokenEntity.entityName();
+    return manager
+      .createQueryBuilder(ActorTokenEntity, alias)
+      .where(
+        `${alias}.actorTokenId = :actorTokenId AND ${alias}.projectId = :projectId`,
+        { actorTokenId, projectId },
+      )
+      .andWhere(`${alias}.deletedAt IS NULL`)
+      .setLock("pessimistic_read")
+      .getOne();
+  }
+
+  async patchActorToken(
+    actorTokenId: string,
+    projectId: string,
+    data: ActorTokenPatchDto,
+    manager?: EntityManager,
+  ): Promise<ActorTokenEntity> {
+    const repo = this._repo(manager);
+
+    const entity = await repo.findOne({
+      where: { actorTokenId, projectId, deletedAt: IsNull() },
+    });
+
+    if (!entity) {
+      throw badRequestException(this._logger, {
+        errorMsgUser: "Could not update actor token",
+        errorMsgSystem: "ActorTokenService:patchActorToken:not_found",
+      });
+    }
+
+    // Field by field. `keyId`, `secretHash` and `actorType` are absent from the
+    // DTO and must stay that way: the first two are the credential and the
+    // third decides which grants apply.
+    if (data.name !== undefined) entity.name = data.name;
+    if (data.status !== undefined) entity.status = data.status;
+    if (data.expiresAt !== undefined) {
+      entity.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
+    }
+    if (data.metadata !== undefined) entity.metadata = data.metadata;
+    if (data.accessScopeId !== undefined) {
+      entity.accessScopeId = data.accessScopeId;
+    }
+
+    return repo.save(entity);
+  }
+
+  removeActorToken(
+    actorTokenId: string,
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<UpdateResult> {
+    return this._repo(manager).softDelete({
+      actorTokenId,
+      projectId,
+      deletedAt: IsNull(),
+    });
   }
 }

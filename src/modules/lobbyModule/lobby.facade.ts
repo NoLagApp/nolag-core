@@ -1,3 +1,5 @@
+import { InjectDataSource } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
 import { DataSource, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
@@ -39,6 +41,7 @@ export class LobbyFacade {
   constructor(
     private readonly _service: LobbyService,
     private readonly _queryService: LobbyQueryService,
+    @InjectDataSource(CORE_DATA_SOURCE)
     private readonly _dataSource: DataSource,
   ) {}
 

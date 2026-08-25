@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { AccessScopeEntity } from "../accessScopeModule/accessScope.entity";
 import { ActorAppAccessEntity } from "../actorTokenModule/actorAppAccess.entity";
 import { ActorTokenEntity } from "../actorTokenModule/actorToken.entity";
@@ -23,18 +24,21 @@ import { AuthzService } from "./authz.service";
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      ProjectEntity,
-      PlatformAppEntity,
-      RoomEntity,
-      RoomActorAccessEntity,
-      LobbyEntity,
-      LobbyRoomEntity,
-      AccessScopeEntity,
-      ActorTokenEntity,
-      ActorTokenStateEntity,
-      ActorAppAccessEntity,
-    ]),
+    TypeOrmModule.forFeature(
+      [
+        ProjectEntity,
+        PlatformAppEntity,
+        RoomEntity,
+        RoomActorAccessEntity,
+        LobbyEntity,
+        LobbyRoomEntity,
+        AccessScopeEntity,
+        ActorTokenEntity,
+        ActorTokenStateEntity,
+        ActorAppAccessEntity,
+      ],
+      CORE_DATA_SOURCE,
+    ),
     ActorTokenModule,
     SigningKeyModule,
   ],

@@ -20,6 +20,7 @@ export { CoreModule } from "./core.module";
 export { CoreConfig } from "./core.config";
 export {
   CORE_AUDIT_SINK,
+  CORE_DATA_SOURCE,
   CORE_OPTIONS,
   NoopAuditSink,
   type CoreAuditEvent,
@@ -76,6 +77,10 @@ export * from "./modules/accessScopeModule/dto/accessScope.dto";
 export { AccessScopeQuery } from "./modules/accessScopeModule/query/accessScope.query";
 export * from "./modules/authzModule/dto/authz.dto";
 export * from "./modules/projectConfigModule/dto/projectConfig.dto";
+export * from "./modules/actorTokenModule/dto/actorToken.dto";
+export { ActorTokenQuery } from "./modules/actorTokenModule/query/actorToken.query";
+export * from "./modules/signingKeyModule/dto/signingKey.dto";
+export { SigningKeyQuery } from "./modules/signingKeyModule/query/signingKey.query";
 export * from "./modules/roomModule/dto/room.dto";
 export * from "./modules/roomModule/dto/roomActorAccess.dto";
 export { RoomQuery } from "./modules/roomModule/query/room.query";
@@ -113,7 +118,10 @@ export { ESigningKeyStatus } from "./modules/signingKeyModule/enum/ESigningKeySt
 export { AccessScopeEntity } from "./modules/accessScopeModule/accessScope.entity";
 export { ActorAppAccessEntity } from "./modules/actorTokenModule/actorAppAccess.entity";
 export { ActorTokenEntity } from "./modules/actorTokenModule/actorToken.entity";
-export { ActorTokenStateEntity } from "./modules/actorTokenModule/actorTokenState.entity";
+export {
+  ActorTokenStateEntity,
+  type IConnectionState,
+} from "./modules/actorTokenModule/actorTokenState.entity";
 export { LobbyEntity } from "./modules/lobbyModule/lobby.entity";
 export { LobbyRoomEntity } from "./modules/lobbyModule/lobbyRoom.entity";
 export { PlatformAppEntity } from "./modules/platformAppModule/platformApp.entity";

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { CORE_DATA_SOURCE } from "../../core.options";
 import { LobbyEntity } from "./lobby.entity";
 import { LobbyFacade } from "./lobby.facade";
 import { LobbyRepository } from "./lobby.repository";
@@ -9,7 +10,9 @@ import { LobbyRoomRepository } from "./lobbyRoom.repository";
 import { LobbyQueryService } from "./query/lobby.query.service";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LobbyEntity, LobbyRoomEntity])],
+  imports: [
+    TypeOrmModule.forFeature([LobbyEntity, LobbyRoomEntity], CORE_DATA_SOURCE),
+  ],
   providers: [
     LobbyService,
     LobbyQueryService,
