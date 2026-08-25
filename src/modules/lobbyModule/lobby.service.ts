@@ -50,6 +50,18 @@ export class LobbyService {
     });
   }
 
+  /**
+   * Slug lookup with no app to narrow it. The broker's presence propagation
+   * knows a slug and nothing else, so this is the one place a lobby is found
+   * across apps. Slugs are only unique per app, so a collision resolves to
+   * whichever row the database returns first.
+   */
+  findBySlug(slug: string, manager?: EntityManager): Promise<LobbyEntity | null> {
+    return this._lobbies(manager).findOne({
+      where: { slug, deletedAt: IsNull() },
+    });
+  }
+
   listByAppId(appId: string): Promise<LobbyEntity[]> {
     return this._lobbyRepository.findByAppId(appId);
   }
@@ -85,6 +97,28 @@ export class LobbyService {
     entity.metadata = data.metadata ?? null;
 
     return this._lobbies(manager).save(entity);
+  }
+
+  /**
+   * Bulk create with the slugs given rather than generated, and no conflict
+   * check. Provisioning declares the slugs it wants and the app is new, so
+   * there is nothing to collide with.
+   */
+  createStaticLobbies(
+    appId: string,
+    lobbies: Array<{ slug: string; name: string; description?: string }>,
+    manager: EntityManager,
+  ): Promise<LobbyEntity[]> {
+    const entities = lobbies.map((lobby) => {
+      const entity = new LobbyEntity();
+      entity.appId = appId;
+      entity.slug = lobby.slug;
+      entity.name = lobby.name;
+      entity.description = lobby.description ?? null;
+      return entity;
+    });
+
+    return this._lobbies(manager).save(entities);
   }
 
   updateLock(

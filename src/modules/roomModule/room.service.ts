@@ -91,6 +91,35 @@ export class RoomService {
     return this._repo(manager).save(entity);
   }
 
+  /**
+   * Bulk create with the slugs given rather than generated, and no conflict
+   * check. Provisioning declares the slugs it wants and the app is new, so
+   * there is nothing to collide with.
+   */
+  createStaticRooms(
+    appId: string,
+    rooms: Array<{
+      slug: string;
+      name: string;
+      description?: string;
+      topics?: string[];
+    }>,
+    manager: EntityManager,
+  ): Promise<RoomEntity[]> {
+    const entities = rooms.map((room) => {
+      const entity = new RoomEntity();
+      entity.appId = appId;
+      entity.slug = room.slug;
+      entity.name = room.name;
+      entity.description = room.description ?? null;
+      entity.status = ERoomStatus.Active;
+      entity.topics = room.topics ?? null;
+      return entity;
+    });
+
+    return this._repo(manager).save(entities);
+  }
+
   updateLock(
     roomId: string,
     appId: string,

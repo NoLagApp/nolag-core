@@ -1,7 +1,7 @@
 import { InjectDataSource } from "@nestjs/typeorm";
 import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
-import { DataSource, UpdateResult } from "typeorm";
+import { DataSource, EntityManager, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
 import {
   badRequestException,
@@ -197,6 +197,33 @@ export class RoomFacade {
 
       return this._service.removeRoom(roomId, appId, manager);
     });
+  }
+
+  /**
+   * Provision the rooms an app declares up front. No slug generation and no
+   * room cap: the slugs come from a declaration, and the cap exists to bound
+   * runtime creation by connected clients, not provisioning.
+   *
+   * Pass a manager to join a caller's transaction. It must belong to core's
+   * own DataSource; a manager from another connection has no metadata for
+   * these entities.
+   */
+  createStaticRoomsFromConfig(
+    appId: string,
+    rooms: Array<{
+      slug: string;
+      name: string;
+      description?: string;
+      topics?: string[];
+    }>,
+    manager?: EntityManager,
+  ): Promise<RoomEntity[]> {
+    if (manager) {
+      return this._service.createStaticRooms(appId, rooms, manager);
+    }
+    return this._dataSource.transaction((m) =>
+      this._service.createStaticRooms(appId, rooms, m),
+    );
   }
 
   private _generateSlug(name: string): string {

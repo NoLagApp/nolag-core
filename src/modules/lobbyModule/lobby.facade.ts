@@ -1,7 +1,7 @@
 import { InjectDataSource } from "@nestjs/typeorm";
 import { CORE_DATA_SOURCE } from "../../core.options";
 import { Injectable, Logger } from "@nestjs/common";
-import { DataSource, UpdateResult } from "typeorm";
+import { DataSource, EntityManager, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
 import { TtlCache } from "../../common/utils/ttlCache";
 import {
@@ -228,6 +228,65 @@ export class LobbyFacade {
     const rows = await this._service.listLobbyRooms(lobbyId);
     this._lobbyRoomsCache.set(lobbyId, rows);
     return rows;
+  }
+
+  /**
+   * Provision the lobbies an app declares up front, wiring each lobby's room
+   * slug list to rooms created in the same pass. A slug that matches no room
+   * is logged and skipped rather than failing provisioning, since the rooms
+   * are the useful half and a missing lobby membership is repairable.
+   *
+   * Pass a manager to join a caller's transaction. It must belong to core's
+   * own DataSource; a manager from another connection has no metadata for
+   * these entities.
+   */
+  async createStaticLobbiesFromConfig(
+    appId: string,
+    lobbies: Array<{
+      slug: string;
+      name: string;
+      description?: string;
+      rooms?: string[];
+    }>,
+    createdRooms: Array<{ roomId: string; slug: string }>,
+    manager?: EntityManager,
+  ): Promise<LobbyEntity[]> {
+    const run = async (m: EntityManager): Promise<LobbyEntity[]> => {
+      const created = await this._service.createStaticLobbies(
+        appId,
+        lobbies,
+        m,
+      );
+
+      const roomsBySlug = new Map(createdRooms.map((r) => [r.slug, r]));
+
+      for (let i = 0; i < created.length; i++) {
+        const lobby = created[i];
+        for (const slug of lobbies[i]?.rooms ?? []) {
+          const room = roomsBySlug.get(slug);
+          if (!room) {
+            this._logger.warn(
+              `createStaticLobbiesFromConfig: lobby "${lobby.slug}" references unknown room slug "${slug}", skipping`,
+            );
+            continue;
+          }
+          await this._service.addRoomToLobby(lobby.lobbyId, room.roomId, m);
+        }
+      }
+
+      return created;
+    };
+
+    return manager ? run(manager) : this._dataSource.transaction(run);
+  }
+
+  /**
+   * Resolve a lobby slug to its id without app context. The broker reaches
+   * the lobby by slug alone, so this searches across apps.
+   */
+  async resolveLobbySlug(slug: string): Promise<string | null> {
+    const lobby = await this._service.findBySlug(slug);
+    return lobby?.lobbyId ?? null;
   }
 
   private _generateSlug(name: string): string {

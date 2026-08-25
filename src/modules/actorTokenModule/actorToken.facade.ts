@@ -116,6 +116,19 @@ export class ActorTokenFacade {
     return token;
   }
 
+  /**
+   * Look one up without throwing.
+   *
+   * `getActorToken` raises a 404, which is right on an HTTP path. A caller
+   * deciding what to do about an absent actor wants the null.
+   */
+  findActorToken(
+    actorTokenId: string,
+    projectId: string,
+  ): Promise<ActorTokenEntity | null> {
+    return this._actorTokenService.findByIdAndProject(actorTokenId, projectId);
+  }
+
   listByProjectId(projectId: string): Promise<ActorTokenEntity[]> {
     return this._actorTokenService.listByProjectId(projectId);
   }
