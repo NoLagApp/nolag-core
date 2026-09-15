@@ -1,9 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
-import { DataSource, UpdateResult } from "typeorm";
+import { DataSource, EntityManager, IsNull, UpdateResult } from "typeorm";
 import { PaginatedResult } from "../../common/pagination";
 import { GeneratedCredential } from "../../common/utils/secretHash";
-import { notFoundException } from "../../utils/exceptions";
+import { badRequestException, notFoundException } from "../../utils/exceptions";
+import { AccessScopeEntity } from "../accessScopeModule/accessScope.entity";
 import { ActorTokenEntity } from "./actorToken.entity";
 import { ActorTokenService } from "./actorToken.service";
 import {
@@ -24,10 +25,11 @@ import { ActorTokenQueryService } from "./query/actorToken.query.service";
  * Actors: who may connect at all.
  *
  * Ported from Titus's `actorTokenModule/actorToken.facade.ts`, without its
- * audit log, project facade and access scope facade. Validating that a scope
- * belongs to the project is the caller's job, because doing it here would make
- * this module depend on the scope module and the scope module already depends
- * on this one.
+ * audit log, project facade and access scope facade. A scope named on create
+ * or update is checked against the project here, by entity rather than through
+ * the scope module (the scope module already depends on this one), because no
+ * caller was doing it and an actor bound to another project's scope was
+ * accepted silently.
  */
 @Injectable()
 export class ActorTokenFacade {
@@ -137,9 +139,10 @@ export class ActorTokenFacade {
     projectId: string,
     data: ActorTokenCreateDto,
   ): Promise<CreatedActorToken> {
-    return this._dataSource.transaction((manager) =>
-      this._actorTokenService.createActorToken(projectId, data, manager),
-    );
+    return this._dataSource.transaction(async (manager) => {
+      await this._assertScopeInProject(projectId, data.accessScopeId, manager);
+      return this._actorTokenService.createActorToken(projectId, data, manager);
+    });
   }
 
   updateActorToken(
@@ -158,6 +161,8 @@ export class ActorTokenFacade {
           errorMsgUser: `Actor token ${actorTokenId} not found`,
         });
       }
+
+      await this._assertScopeInProject(projectId, data.accessScopeId, manager);
 
       return this._actorTokenService.patchActorToken(
         actorTokenId,
@@ -216,5 +221,29 @@ export class ActorTokenFacade {
 
   clearActorState(actorTokenId: string): Promise<void> {
     return this._stateRepository.clearState(actorTokenId);
+  }
+
+  /**
+   * `undefined` means "not mentioned" and `null` means "clear the scope"; only
+   * a string names a scope, and that scope must be live in this project.
+   */
+  private async _assertScopeInProject(
+    projectId: string,
+    accessScopeId: string | null | undefined,
+    manager: EntityManager,
+  ): Promise<void> {
+    if (typeof accessScopeId !== "string") {
+      return;
+    }
+
+    const count = await manager.count(AccessScopeEntity, {
+      where: { accessScopeId, projectId, deletedAt: IsNull() },
+    });
+
+    if (count === 0) {
+      throw badRequestException(this._logger, {
+        errorMsgUser: `Access scope ${accessScopeId} does not belong to this project`,
+      });
+    }
   }
 }

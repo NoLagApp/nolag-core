@@ -45,6 +45,15 @@ interface ResolvedScope {
   scopeName?: string;
 }
 
+/**
+ * Why a union rather than `null`: there are now two distinct reasons the
+ * session cannot be built, and the broker is told which one so an operator
+ * reading its logs can tell a deleted project from a deactivated scope.
+ */
+type SessionBuildResult =
+  | { ok: true; payload: ActorSessionPayload }
+  | { ok: false; reason: "project_not_found" | "scope_inactive" };
+
 interface ResolvedLimits {
   maxConnections: number | null;
   maxMessageSizeBytes: number | null;
@@ -113,12 +122,12 @@ export class AuthzService {
       return { valid: false, error: "token_expired" };
     }
 
-    const payload = await this._buildSessionPayload(actorToken);
-    if (!payload) {
-      return { valid: false, error: "project_not_found" };
+    const built = await this._buildSessionPayload(actorToken);
+    if (!built.ok) {
+      return { valid: false, error: built.reason };
     }
 
-    return { valid: true, ...payload };
+    return { valid: true, ...built.payload };
   }
 
   /**
@@ -169,12 +178,16 @@ export class AuthzService {
       return deny;
     }
 
-    const payload = await this._buildSessionPayload(actorToken);
-    if (!payload) {
-      return { valid: false, error: "project_not_found" };
+    const built = await this._buildSessionPayload(actorToken);
+    if (!built.ok) {
+      return { valid: false, error: built.reason };
     }
 
-    return { valid: true, ...payload, authExpiresAt: verified.payload.exp };
+    return {
+      valid: true,
+      ...built.payload,
+      authExpiresAt: verified.payload.exp,
+    };
   }
 
   /* ── revalidate ────────────────────────────────────────────────────────── */
@@ -223,16 +236,20 @@ export class AuthzService {
       };
     }
 
-    const payload = await this._buildSessionPayload(actorToken);
-    if (!payload) {
+    const built = await this._buildSessionPayload(actorToken);
+    if (!built.ok) {
+      this._logger.warn("revalidateActor: session denied", {
+        actorTokenId,
+        reason: built.reason,
+      });
       return {
         valid: false,
-        error: "project_not_found",
-        disconnectReason: "project_not_found",
+        error: built.reason,
+        disconnectReason: built.reason,
       };
     }
 
-    return { valid: true, ...payload };
+    return { valid: true, ...built.payload };
   }
 
   /**
@@ -242,21 +259,26 @@ export class AuthzService {
    * this, which is an invitation for the connect path and the refresh path to
    * drift into granting different access for the same actor.
    *
-   * Returns null when the project is missing, which callers turn into their own
-   * flavour of denial.
+   * Returns `{ ok: false }` when the project is missing or the actor's scope
+   * cannot be honoured; callers turn the reason into their own flavour of
+   * denial.
    */
   private async _buildSessionPayload(
     actorToken: ActorTokenEntity,
-  ): Promise<ActorSessionPayload | null> {
+  ): Promise<SessionBuildResult> {
     const project = await this._dataSource.manager.findOne(ProjectEntity, {
       where: { projectId: actorToken.projectId, deletedAt: IsNull() },
     });
 
     if (!project) {
-      return null;
+      return { ok: false, reason: "project_not_found" };
     }
 
     const scope = await this._resolveScope(actorToken);
+    if (!scope) {
+      return { ok: false, reason: "scope_inactive" };
+    }
+
     const { apps } = await this._buildAppAccess(
       actorToken,
       scope.scopeId,
@@ -268,7 +290,7 @@ export class AuthzService {
       actorToken.actorType,
     );
 
-    return {
+    const payload: ActorSessionPayload = {
       actorTokenId: actorToken.actorTokenId,
       organizationId: project.organizationId,
       projectId: actorToken.projectId,
@@ -285,26 +307,36 @@ export class AuthzService {
       sessionExpirySeconds: persistentSession ? limits.sessionExpirySeconds : 0,
       persistentSession,
     };
+
+    return { ok: true, payload };
   }
 
   /**
-   * An inactive scope resolves to no scope at all, which is the safe direction:
-   * the actor then addresses the unscoped topic space, and its grants are
-   * evaluated the same way.
+   * Returns `null` when the actor names a scope that cannot be honoured: one
+   * that is inactive, soft-deleted, or belongs to another project. The
+   * previous behaviour silently dropped such an actor into the unscoped topic
+   * space, which WIDENS its access the moment an operator deactivates the
+   * scope. Denying is the only direction that fails closed: kraken refuses
+   * the connect, and revalidation disconnects any live connection within its
+   * next cycle.
    */
   private async _resolveScope(
     actorToken: ActorTokenEntity,
-  ): Promise<ResolvedScope> {
+  ): Promise<ResolvedScope | null> {
     if (!actorToken.accessScopeId) {
       return {};
     }
 
     const scope = await this._dataSource.manager.findOne(AccessScopeEntity, {
-      where: { accessScopeId: actorToken.accessScopeId, deletedAt: IsNull() },
+      where: {
+        accessScopeId: actorToken.accessScopeId,
+        projectId: actorToken.projectId,
+        deletedAt: IsNull(),
+      },
     });
 
     if (!scope || !scope.isActive) {
-      return {};
+      return null;
     }
 
     return {
@@ -381,6 +413,13 @@ export class AuthzService {
     }
 
     const scope = await this._resolveScope(actorToken);
+    if (!scope) {
+      // Same rule as validate: a scope that cannot be honoured denies. This is
+      // the subscribe-time cache-miss path, so without it a scoped actor whose
+      // scope was just deactivated would keep gaining rooms until the next
+      // revalidation cycle.
+      return deny;
+    }
 
     // Parse {appSlug}/[{scopeSlug}/]{roomSlug}/{topic}. Slugs and topic names
     // cannot contain a slash, so segment count identifies the form.

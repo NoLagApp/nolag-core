@@ -1,5 +1,6 @@
 import { DataSource } from "typeorm";
 import * as jwt from "jsonwebtoken";
+import { AccessScopeEntity } from "../src/modules/accessScopeModule/accessScope.entity";
 import { EAccessPermission } from "../src/modules/actorTokenModule/enum/EAccessPermission.enum";
 import { EActorTokenStatus } from "../src/modules/actorTokenModule/enum/EActorTokenStatus.enum";
 import { EActorType } from "../src/modules/actorTokenModule/enum/EActorType.enum";
@@ -456,7 +457,10 @@ describe("Authorization resolution", () => {
       expect(result.scopeName).toBe("Acme");
     });
 
-    it("treats an inactive scope as no scope at all", async () => {
+    // Deactivating a scope must not widen access. The old behaviour dropped
+    // the actor into the unscoped namespace, so an operator "switching off" a
+    // tenant handed that tenant's actors every unscoped room instead.
+    it("denies an actor whose scope is inactive", async () => {
       const project = await scenario();
       const scope = await makeScope(ds, project.projectId, { isActive: false });
       const app = await makeApp(ds, project.projectId, { slug: "chat" });
@@ -465,13 +469,54 @@ describe("Authorization resolution", () => {
         accessScopeId: scope.accessScopeId,
       });
 
-      const result = expectAllowed(
-        await service.validateActor(actor.accessToken),
+      expect(await service.validateActor(actor.accessToken)).toEqual({
+        valid: false,
+        error: "scope_inactive",
+      });
+    });
+
+    it("disconnects an actor whose scope was deactivated after it connected", async () => {
+      const project = await scenario();
+      const scope = await makeScope(ds, project.projectId);
+      const app = await makeApp(ds, project.projectId, { slug: "chat" });
+      await makeRoom(ds, app.appId, { slug: "general" });
+      const actor = await makeActor(ds, project.projectId, {
+        accessScopeId: scope.accessScopeId,
+      });
+
+      expectAllowed(await service.validateActor(actor.accessToken));
+
+      await ds.manager.update(
+        AccessScopeEntity,
+        { accessScopeId: scope.accessScopeId },
+        { isActive: false },
       );
-      expect(result.apps[0].allowedTopics[0].pattern).toBe(
-        "chat/general/messages",
-      );
-      expect(result.scopeId).toBeUndefined();
+
+      expect(await service.revalidateActor(actor.entity.actorTokenId)).toEqual({
+        valid: false,
+        error: "scope_inactive",
+        disconnectReason: "scope_inactive",
+      });
+    });
+
+    it("denies an actor bound to another project's scope", async () => {
+      const project = await scenario();
+      const otherProject = await scenario();
+      const foreign = await makeScope(ds, otherProject.projectId, {
+        slug: "acme",
+      });
+      const app = await makeApp(ds, project.projectId, { slug: "chat" });
+      await makeRoom(ds, app.appId, { slug: "general" });
+      // Written straight to the table: the facade now refuses this on create,
+      // and this test covers the rows that predate that check.
+      const actor = await makeActor(ds, project.projectId, {
+        accessScopeId: foreign.accessScopeId,
+      });
+
+      expect(await service.validateActor(actor.accessToken)).toEqual({
+        valid: false,
+        error: "scope_inactive",
+      });
     });
   });
 
@@ -884,6 +929,31 @@ describe("Authorization resolution", () => {
           "chat/other/general/messages",
         ),
       ).resolves.toEqual({ allow: false, allowedTopics: [] });
+    });
+
+    it("denies every pattern once the actor's scope is inactive", async () => {
+      const project = await scenario();
+      const scope = await makeScope(ds, project.projectId, {
+        slug: "acme",
+        isActive: false,
+      });
+      const app = await makeApp(ds, project.projectId, { slug: "chat" });
+      await makeRoom(ds, app.appId, { slug: "general" });
+      const actor = await makeActor(ds, project.projectId, {
+        accessScopeId: scope.accessScopeId,
+      });
+
+      // This is the subscribe-time cache-miss path. Without the deny here a
+      // scoped actor keeps gaining rooms for a full revalidation cycle after
+      // its scope is switched off.
+      for (const pattern of [
+        "chat/acme/general/messages",
+        "chat/general/messages",
+      ]) {
+        await expect(
+          service.checkRoomAccess(actor.entity.actorTokenId, pattern),
+        ).resolves.toEqual({ allow: false, allowedTopics: [] });
+      }
     });
 
     it.each([

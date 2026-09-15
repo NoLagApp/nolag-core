@@ -23,19 +23,18 @@ import { AuthzService } from "./authz.service";
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature(
-      [
-        ProjectEntity,
-        PlatformAppEntity,
-        RoomEntity,
-        RoomActorAccessEntity,
-        LobbyEntity,
-        LobbyRoomEntity,
-        AccessScopeEntity,
-        ActorTokenEntity,
-        ActorTokenStateEntity,
-        ActorAppAccessEntity,
-      ]),
+    TypeOrmModule.forFeature([
+      ProjectEntity,
+      PlatformAppEntity,
+      RoomEntity,
+      RoomActorAccessEntity,
+      LobbyEntity,
+      LobbyRoomEntity,
+      AccessScopeEntity,
+      ActorTokenEntity,
+      ActorTokenStateEntity,
+      ActorAppAccessEntity,
+    ]),
     ActorTokenModule,
     SigningKeyModule,
   ],

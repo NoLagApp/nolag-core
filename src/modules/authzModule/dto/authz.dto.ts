@@ -180,7 +180,8 @@ export type AuthzDenyReason =
   | "token_suspended"
   | "token_expired"
   | "token_not_found"
-  | "project_not_found";
+  | "project_not_found"
+  | "scope_inactive";
 
 export interface ActorSessionPayload {
   actorTokenId: string;

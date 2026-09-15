@@ -6,6 +6,7 @@ import { CoreModule } from "../src/core.module";
 import { allCoreMigrations, coreEntities } from "../src/schema";
 import { AccessScopeFacade } from "../src/modules/accessScopeModule/accessScope.facade";
 import { ActorTokenEntity } from "../src/modules/actorTokenModule/actorToken.entity";
+import { ActorTokenFacade } from "../src/modules/actorTokenModule/actorToken.facade";
 import { EActorType } from "../src/modules/actorTokenModule/enum/EActorType.enum";
 import { EAccessPermission } from "../src/modules/actorTokenModule/enum/EAccessPermission.enum";
 import { LobbyFacade } from "../src/modules/lobbyModule/lobby.facade";
@@ -35,6 +36,7 @@ describe("configuration facades", () => {
   let grants: RoomActorAccessFacade;
   let lobbies: LobbyFacade;
   let scopes: AccessScopeFacade;
+  let actors: ActorTokenFacade;
 
   const createdProjectIds: string[] = [];
 
@@ -75,6 +77,7 @@ describe("configuration facades", () => {
     grants = app.get(RoomActorAccessFacade);
     lobbies = app.get(LobbyFacade);
     scopes = app.get(AccessScopeFacade);
+    actors = app.get(ActorTokenFacade);
   });
 
   afterAll(async () => {
@@ -411,6 +414,63 @@ describe("configuration facades", () => {
       await expect(
         scopes.delete(scope.accessScopeId, project.projectId),
       ).rejects.toThrow();
+    });
+
+    /**
+     * The other half of the same guard. Nothing above the facade checks the
+     * scope, so this is where a cross-project binding must stop.
+     */
+    it("refuses to bind an actor to another project's scope on create", async () => {
+      const project = await newProject();
+      const otherProject = await newProject();
+      const foreign = await scopes.create(otherProject.projectId, {
+        slug: "acme",
+        name: "Acme",
+      });
+
+      await expect(
+        actors.createActorToken(project.projectId, {
+          name: "Cross-project",
+          actorType: EActorType.Device,
+          accessScopeId: foreign.accessScopeId,
+        }),
+      ).rejects.toThrow(/does not belong to this project/);
+    });
+
+    it("refuses to move an actor onto another project's scope on update", async () => {
+      const project = await newProject();
+      const otherProject = await newProject();
+      const mine = await scopes.create(project.projectId, {
+        slug: "acme",
+        name: "Acme",
+      });
+      const foreign = await scopes.create(otherProject.projectId, {
+        slug: "acme",
+        name: "Acme",
+      });
+      const created = await actors.createActorToken(project.projectId, {
+        name: "Movable",
+        actorType: EActorType.Device,
+        accessScopeId: mine.accessScopeId,
+      });
+
+      await expect(
+        actors.updateActorToken(
+          created.entity.actorTokenId,
+          project.projectId,
+          {
+            accessScopeId: foreign.accessScopeId,
+          },
+        ),
+      ).rejects.toThrow(/does not belong to this project/);
+
+      // `null` still clears the scope; only a foreign id is refused.
+      const cleared = await actors.updateActorToken(
+        created.entity.actorTokenId,
+        project.projectId,
+        { accessScopeId: null },
+      );
+      expect(cleared.accessScopeId).toBeNull();
     });
   });
 
